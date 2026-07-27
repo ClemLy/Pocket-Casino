@@ -368,7 +368,16 @@ button.chip:disabled {
   gap: var(--u2);
 }
 
+/* Le nom peut passer sur deux lignes (ex : "Quinte Flush Royale") sans
+   pousser le badge de niveau, qui doit rester lisible sur une seule ligne. */
+.tile__head .badge {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .tile__name {
+  flex: 1;
+  min-width: 0;
   font-size: 9px;
   letter-spacing: 1px;
   line-height: 1.4;

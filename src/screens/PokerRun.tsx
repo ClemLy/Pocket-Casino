@@ -29,14 +29,23 @@ import { Sprite } from '../components/Sprite';
 
 type Phase = 'accueil' | 'jeu' | 'gain' | 'boutique' | 'echec';
 
-/** Mains proposées à l'amélioration en boutique. */
+/**
+ * Mains proposées à l'amélioration en boutique, de la plus faible à la plus
+ * forte. Les dix combinaisons existent, il n'y a pas de raison d'en cacher
+ * certaines : le Carré, la Quinte Flush et la Quinte Flush Royale doivent
+ * pouvoir monter en niveau comme les autres.
+ */
 const UPGRADABLE: readonly HandType[] = [
+  'HIGH_CARD',
   'PAIR',
   'TWO_PAIR',
   'THREE_KIND',
   'STRAIGHT',
   'FLUSH',
   'FULL_HOUSE',
+  'FOUR_KIND',
+  'STRAIGHT_FLUSH',
+  'ROYAL_FLUSH',
 ];
 
 export function PokerRun() {
