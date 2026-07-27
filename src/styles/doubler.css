@@ -1,0 +1,180 @@
+/* ==========================================================================
+   Quitte ou Double : la mecanique signature
+   ========================================================================== */
+
+.doubler-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: grid;
+  place-items: center;
+  padding: var(--u4);
+  background: rgba(3, 8, 5, 0.88);
+}
+
+.doubler {
+  width: min(460px, 100%);
+  padding: var(--u6) var(--u5);
+  text-align: center;
+  background: linear-gradient(180deg, var(--felt-600), var(--felt-800));
+  border: var(--u1) solid var(--ink-900);
+  box-shadow:
+    inset 0 var(--u1) 0 rgba(255, 255, 255, 0.12),
+    0 var(--u3) 0 rgba(0, 0, 0, 0.7);
+}
+
+.doubler__kicker {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--bone-500);
+}
+
+.doubler__title {
+  margin-top: var(--u2);
+  font-size: clamp(15px, 4.4vw, 22px);
+  color: var(--brass-500);
+  text-shadow: 3px 3px 0 var(--ink-900);
+}
+
+.doubler__pot {
+  margin: var(--u4) auto var(--u3);
+  display: inline-block;
+  font-size: 30px;
+}
+
+.doubler__stage {
+  display: grid;
+  place-items: center;
+  min-height: 124px;
+  margin: var(--u4) 0;
+}
+
+.doubler__streak {
+  display: flex;
+  justify-content: center;
+  gap: var(--u2);
+  margin-bottom: var(--u4);
+}
+
+.doubler__step {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 26px;
+  font-size: 9px;
+  color: var(--bone-500);
+  background: var(--ink-900);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.doubler__step--done {
+  color: var(--ink-900);
+  background: var(--led-green);
+  border-color: var(--ink-900);
+}
+
+.doubler__step--current {
+  color: var(--ink-900);
+  background: var(--brass-500);
+  border-color: var(--ink-900);
+  animation: blink 620ms steps(1, end) infinite;
+}
+
+.doubler__choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--u3);
+}
+
+.guess-btn {
+  padding: var(--u4);
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--bone-100);
+  border: var(--u1) solid var(--ink-900);
+  box-shadow:
+    inset 0 var(--u1) 0 rgba(255, 255, 255, 0.2),
+    0 var(--u2) 0 rgba(0, 0, 0, 0.6);
+  transition: transform var(--speed-fast) steps(2);
+}
+
+.guess-btn:active:not(:disabled) {
+  transform: translateY(var(--u2));
+  box-shadow: inset 0 var(--u1) 0 rgba(255, 255, 255, 0.2);
+}
+
+.guess-btn--rouge {
+  background: var(--crimson-500);
+}
+
+.guess-btn--noir {
+  background: var(--ink-700);
+}
+
+.guess-btn:disabled {
+  filter: grayscale(0.7) brightness(0.5);
+}
+
+.doubler__verdict {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: var(--u4);
+}
+
+.doubler__actions {
+  display: flex;
+  gap: var(--u3);
+  margin-top: var(--u4);
+}
+
+.doubler__actions > * {
+  flex: 1;
+}
+
+/* Le gros bouton clignotant qui appelle le Quitte ou Double. */
+.doubler-call {
+  position: relative;
+  width: 100%;
+  padding: var(--u5);
+  font-size: clamp(12px, 3.2vw, 17px);
+  letter-spacing: 2px;
+  color: var(--ink-900);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--brass-500) 0 14px,
+    var(--brass-600) 14px 28px
+  );
+  border: var(--u1) solid var(--ink-900);
+  box-shadow:
+    inset 0 var(--u1) 0 rgba(255, 255, 255, 0.45),
+    0 var(--u2) 0 var(--ink-900),
+    0 0 24px rgba(242, 193, 78, 0.45);
+  animation: call-pulse 900ms steps(2, end) infinite;
+}
+
+@keyframes call-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.35);
+  }
+}
+
+.doubler-call:active {
+  transform: translateY(var(--u2));
+  box-shadow: inset 0 var(--u1) 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Ecran de resultat de manche */
+.result-panel {
+  text-align: center;
+  padding: var(--u6) var(--u4);
+}
+
+.result-panel__amount {
+  display: inline-block;
+  margin: var(--u3) 0 var(--u5);
+  font-size: 34px;
+}

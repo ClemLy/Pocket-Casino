@@ -1,0 +1,58 @@
+name: Deploiement GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul deploiement a la fois, sans annuler celui qui est en cours de
+# publication : couper un deploiement Pages en vol laisse le site casse.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Construire le site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@v4
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+
+      - name: Installer les dependances
+        run: npm ci
+
+      - name: Compiler avec le chemin de base du depot
+        # GitHub Pages sert le site sous /<nom-du-depot>/, il faut le dire a Vite.
+        run: npm run build -- --base="/${{ github.event.repository.name }}/"
+
+      - name: Configurer Pages
+        uses: actions/configure-pages@v5
+
+      - name: Publier l artefact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Mettre en ligne
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deployer sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

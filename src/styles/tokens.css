@@ -1,0 +1,97 @@
+/* ==========================================================================
+   Pocket Casino : jetons de design
+   Palette limitee facon console 8 bits. Chaque couleur a un role precis,
+   on n'improvise pas de teinte dans les composants.
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('../assets/fonts/press-start-2p-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VT323';
+  src: url('../assets/fonts/vt323-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Feutrine : vert foret mat, desature pour eviter l'effet verre/bouteille
+     d'un vert trop sature qui penche vers le cyan. */
+  --felt-900: #0a170f;
+  --felt-800: #12271a;
+  --felt-700: #1a3624;
+  --felt-600: #24492f;
+  --felt-500: #305c3c;
+  /* Accent plus vif de la meme famille de teinte, pour le zero de la roulette
+     et les touches qui doivent se detacher du tapis. */
+  --felt-accent: #2f8049;
+
+  /* Bois du meuble */
+  --wood-900: #2a1509;
+  --wood-700: #4a2712;
+  --wood-500: #6d3b1c;
+  --wood-300: #9a5c2e;
+
+  /* Laiton et enseignes */
+  --brass-500: #f2c14e;
+  --brass-600: #d4972a;
+  --brass-700: #a06d15;
+
+  /* Rouge tapis / coeur */
+  --crimson-500: #d7263d;
+  --crimson-600: #9e1628;
+
+  /* Encre et papier */
+  --ink-900: #050807;
+  --ink-700: #12100d;
+  --bone-100: #f4ecd8;
+  --bone-300: #cdc0a4;
+  --bone-500: #8d8267;
+
+  /* Signaux */
+  --led-amber: #ffb627;
+  --led-green: #6bf178;
+  --led-red: #ff5964;
+  --neon-cyan: #5ad2f4;
+  --violet-500: #7b5ea7;
+
+  /* Typographie */
+  --font-arcade: 'Press Start 2P', 'Courier New', monospace;
+  --font-led: 'VT323', 'Courier New', monospace;
+
+  /* Rythme : tout est multiple de 4 px pour rester sur la grille pixel. */
+  --u1: 4px;
+  --u2: 8px;
+  --u3: 12px;
+  --u4: 16px;
+  --u5: 20px;
+  --u6: 24px;
+  --u8: 32px;
+  --u10: 40px;
+  --u12: 48px;
+
+  /* Reliefs : aucune ombre floue, uniquement des decalages nets. */
+  --bevel-light: inset 0 var(--u1) 0 rgba(255, 255, 255, 0.12);
+  --bevel-dark: inset 0 calc(var(--u1) * -1) 0 rgba(0, 0, 0, 0.45);
+  --drop-2: 0 var(--u1) 0 var(--ink-900);
+  --drop-4: 0 var(--u2) 0 var(--ink-900);
+  --drop-6: 0 var(--u3) 0 rgba(0, 0, 0, 0.6);
+
+  --radius: 0px;
+  --speed-fast: 90ms;
+  --speed: 180ms;
+  --speed-slow: 420ms;
+
+  color-scheme: dark;
+}
+
+/* Grain de feutrine genere en SVG, aucun fichier image a charger. */
+:root {
+  --felt-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)' opacity='0.5'/%3E%3C/svg%3E");
+}

@@ -1,0 +1,59 @@
+name: Rafraichir les captures
+
+# Declenchement manuel : rejoue les parties scriptees et ouvre une pull request
+# si le rendu a bouge. Les captures restent ainsi toujours a jour dans le README
+# sans polluer l historique a chaque commit.
+on:
+  workflow_dispatch:
+    inputs:
+      raison:
+        description: Pourquoi regenerer les captures
+        required: false
+        default: Mise a jour du rendu
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    name: Regenerer et proposer une PR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@v4
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+
+      - name: Installer les dependances
+        run: npm ci
+
+      - name: Installer Chromium pour Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Compiler le bundle
+        run: npm run build
+
+      - name: Regenerer les captures
+        run: npm run screenshots
+
+      - name: Ouvrir la pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'chore(screenshots): regeneration automatique'
+          branch: chore/refresh-screenshots
+          delete-branch: true
+          title: 'chore(screenshots): mise a jour des captures'
+          body: |
+            Captures regenerees par le workflow `refresh-screenshots`.
+
+            Raison : ${{ inputs.raison }}
+
+            Les captures sont deterministes (seed fixe dans `scripts/screenshots.mjs`).
+            Une difference ici correspond donc a un vrai changement visuel.
+          add-paths: screenshots/

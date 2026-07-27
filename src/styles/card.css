@@ -1,0 +1,242 @@
+/* ==========================================================================
+   Cartes a jouer
+   Dessinees maison : bordure pixel, papier ivoire granuleux, enseignes en
+   sprites. Aucune police d'icones, aucun caractere Unicode de couleur.
+   ========================================================================== */
+
+.card {
+  --card-w: 62px;
+  --card-h: 90px;
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  flex: 0 0 auto;
+  background: linear-gradient(178deg, #fdf7e6 0%, #f1e6cb 60%, #e6d8b8 100%);
+  border: 3px solid var(--ink-900);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.75),
+    inset 0 -3px 0 rgba(120, 96, 52, 0.28),
+    3px 4px 0 rgba(0, 0, 0, 0.5);
+  color: var(--ink-900);
+  user-select: none;
+  transform: rotate(var(--tilt, 0deg));
+  transition:
+    transform var(--speed) ease-out,
+    box-shadow var(--speed) ease-out;
+}
+
+/* Grain papier : la meme texture que le feutre, en beaucoup plus discret. */
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--felt-grain);
+  background-size: 60px 60px;
+  opacity: 0.12;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.card--sm {
+  --card-w: 44px;
+  --card-h: 64px;
+  border-width: 2px;
+}
+
+.card--lg {
+  --card-w: 78px;
+  --card-h: 112px;
+}
+
+/* Cartes cliquables (main du poker) */
+.card--interactive {
+  cursor: pointer;
+}
+
+.card--interactive:hover {
+  transform: rotate(var(--tilt, 0deg)) translateY(-6px);
+}
+
+.card--selected {
+  transform: rotate(var(--tilt, 0deg)) translateY(-16px);
+  box-shadow:
+    inset 0 0 0 2px var(--brass-500),
+    0 0 0 3px var(--brass-500),
+    3px 6px 0 rgba(0, 0, 0, 0.55);
+}
+
+.card--selected:hover {
+  transform: rotate(var(--tilt, 0deg)) translateY(-18px);
+}
+
+/* Carte qui compte dans la combinaison : liseré or et petite pulsation. */
+.card--scoring {
+  box-shadow:
+    inset 0 0 0 2px var(--led-green),
+    0 0 0 3px var(--led-green),
+    3px 6px 0 rgba(0, 0, 0, 0.55);
+}
+
+.card--dimmed {
+  filter: saturate(0.4) brightness(0.7);
+}
+
+.card--burned {
+  filter: grayscale(1) brightness(0.5);
+  transform: rotate(var(--tilt, 0deg)) translateY(8px) scale(0.94);
+}
+
+/* Coins : rang et mini enseigne */
+.card__corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+
+.card__corner--tl {
+  top: 4px;
+  left: 4px;
+}
+
+.card__corner--br {
+  bottom: 4px;
+  right: 4px;
+  transform: rotate(180deg);
+}
+
+.card__rank {
+  font-family: var(--font-arcade);
+  font-size: 9px;
+}
+
+.card--sm .card__rank {
+  font-size: 7px;
+}
+
+.card--lg .card__rank {
+  font-size: 11px;
+}
+
+.card__rank--ten {
+  letter-spacing: -1px;
+}
+
+/* Zone centrale : pips, figure ou grande enseigne */
+.card__body {
+  position: absolute;
+  inset: 16px 11px;
+}
+
+.card--sm .card__body {
+  inset: 12px 8px;
+}
+
+.card__pip {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.card__pip--flipped {
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+
+.card__center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* Cadre des figures : petit encadrement facon carte de bistrot. */
+.card__figure {
+  position: absolute;
+  inset: -2px;
+  display: grid;
+  place-items: center;
+  border: 2px solid currentColor;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Dos de carte : treillis de losanges facon jeu de bistrot.
+   Genere en CSS plutot qu'avec un sprite etire, pour que le motif garde le
+   meme pas quelle que soit la taille de la carte. */
+.card--back {
+  background: var(--crimson-600);
+  overflow: hidden;
+}
+
+.card__back-art {
+  position: absolute;
+  inset: 3px;
+  background-color: var(--crimson-600);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(242, 193, 78, 0.85) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(-45deg, rgba(242, 193, 78, 0.85) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.28) 0 3px, transparent 3px 7px);
+  box-shadow:
+    inset 0 0 0 2px var(--ink-900),
+    inset 0 0 0 4px var(--crimson-500);
+}
+
+/* ==========================================================================
+   Distribution : chaque carte entre en scene avec un leger decalage
+   ========================================================================== */
+
+@keyframes card-deal {
+  0% {
+    transform: translate(var(--deal-x, 120px), var(--deal-y, -140px)) rotate(-24deg) scale(0.85);
+    opacity: 0;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) rotate(var(--tilt, 0deg)) scale(1);
+    opacity: 1;
+  }
+}
+
+.card--dealing {
+  animation: card-deal 260ms cubic-bezier(0.2, 0.85, 0.35, 1) backwards;
+  animation-delay: var(--deal-delay, 0ms);
+}
+
+@keyframes card-flip {
+  0% {
+    transform: rotateY(0deg) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: rotateY(90deg) rotate(var(--tilt, 0deg));
+  }
+  100% {
+    transform: rotateY(0deg) rotate(var(--tilt, 0deg));
+  }
+}
+
+.card--flipping {
+  animation: card-flip 280ms ease-in-out;
+}
+
+/* ==========================================================================
+   Rangees de cartes
+   ========================================================================== */
+
+.hand {
+  display: flex;
+  gap: var(--u2);
+  flex-wrap: wrap;
+  justify-content: center;
+  min-height: calc(var(--card-h, 90px) + var(--u4));
+  padding-top: var(--u4);
+}
+
+.hand--tight {
+  gap: 2px;
+}
+
+.hand--stacked > .card + .card {
+  margin-left: -26px;
+}

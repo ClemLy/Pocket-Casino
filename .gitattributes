@@ -1,2 +1,22 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Detection automatique du texte et normalisation en LF dans le depot.
+* text=auto eol=lf
+
+# Sources : texte UTF-8, diffs lisibles.
+*.ts   text diff=typescript
+*.tsx  text diff=typescript
+*.js   text
+*.mjs  text
+*.css  text diff=css
+*.html text diff=html
+*.json text
+*.md   text diff=markdown
+*.yml  text
+*.svg  text
+
+# Binaires : jamais de conversion de fin de ligne.
+*.png   binary
+*.woff2 binary
+*.ico   binary
+
+# Les captures d'ecran ne polluent pas les diffs de pull request.
+screenshots/*.png -diff linguist-generated
