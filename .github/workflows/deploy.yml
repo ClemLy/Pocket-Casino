@@ -38,7 +38,7 @@ jobs:
         run: npm run build -- --base="/${{ github.event.repository.name }}/"
 
       - name: Configurer Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Publier l artefact
         uses: actions/upload-pages-artifact@v3
