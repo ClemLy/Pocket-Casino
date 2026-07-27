@@ -19,7 +19,12 @@ import { chromium } from 'playwright';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIR = join(ROOT, 'screenshots');
 const PORT = Number(process.env.SHOT_PORT ?? 4310);
-const BASE = `http://localhost:${PORT}`;
+// 127.0.0.1 plutôt que localhost : sur certains runners Linux (dont GitHub
+// Actions), la résolution de "localhost" essaie d'abord ::1 avant de
+// retomber sur l'IPv4, ce qui peut ralentir ou faire échouer la connexion.
+const HOST = '127.0.0.1';
+const BASE = `http://${HOST}:${PORT}`;
+const SERVER_TIMEOUT_MS = 45_000;
 const SEED = 20260727;
 const VIEWPORT = { width: 1440, height: 900 };
 const MOBILE = { width: 390, height: 844 };
@@ -52,6 +57,19 @@ function baseSave(overrides = {}) {
   };
 }
 
+/**
+ * Lance `vite preview` et attend qu'il reponde reellement aux requetes HTTP.
+ *
+ * On avait auparavant guette la ligne "Local:" dans la sortie standard, mais
+ * cette detection est fragile : elle depend du format exact des logs de Vite
+ * et surtout, si le process ne demarre pas du tout (mauvais chemin, port deja
+ * pris, environnement CI qui met plus de temps a demarrer), aucun evenement
+ * 'error' n'etait ecoute. Le script attendait alors betement le timeout
+ * complet avant d'echouer avec un message qui ne dit rien de la vraie cause.
+ * On sonde desormais le serveur lui-meme, et on remonte la sortie du process
+ * dans le message d'erreur pour que l'echec soit diagnosticable directement
+ * depuis les logs CI.
+ */
 async function startServer() {
   if (!existsSync(join(ROOT, 'dist', 'index.html'))) {
     throw new Error('dist/ introuvable. Lance "npm run build" avant "npm run screenshots".');
@@ -62,6 +80,8 @@ async function startServer() {
     [
       join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js'),
       'preview',
+      '--host',
+      HOST,
       '--port',
       String(PORT),
       '--strictPort',
@@ -69,25 +89,44 @@ async function startServer() {
     { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
   );
 
+  let output = '';
+  const record = (chunk) => {
+    output += String(chunk);
+  };
+  child.stdout.on('data', record);
+  child.stderr.on('data', record);
+  child.stdout.on('data', (chunk) => process.stdout.write(chunk));
   child.stderr.on('data', (chunk) => process.stderr.write(chunk));
 
-  await new Promise((resolveReady, rejectReady) => {
-    const timer = setTimeout(
-      () => rejectReady(new Error('Le serveur de prévisualisation n a pas démarré')),
-      20000,
-    );
-    child.stdout.on('data', (chunk) => {
-      if (String(chunk).includes('Local:')) {
-        clearTimeout(timer);
-        resolveReady();
-      }
+  const exitEarly = new Promise((_resolve, reject) => {
+    child.on('error', (err) => {
+      reject(new Error(`impossible de lancer vite preview : ${err.message}\n${output}`));
     });
     child.on('exit', (code) => {
-      clearTimeout(timer);
-      rejectReady(new Error(`vite preview s est arrêté avec le code ${code}`));
+      reject(new Error(`vite preview s'est arrete avec le code ${code}\n${output}`));
     });
   });
+  // Une sortie inattendue plus tard (crash pendant les captures) ne doit pas
+  // produire un rejet de promesse non gere une fois la course terminee.
+  exitEarly.catch(() => {});
 
+  const waitUntilReady = (async () => {
+    const deadline = Date.now() + SERVER_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      try {
+        await fetch(BASE, { signal: AbortSignal.timeout(1500) });
+        return;
+      } catch {
+        // Pas encore pret : le serveur n'accepte pas encore les connexions.
+      }
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    throw new Error(
+      `le serveur de prévisualisation ne répond pas apres ${SERVER_TIMEOUT_MS / 1000}s\n${output}`,
+    );
+  })();
+
+  await Promise.race([waitUntilReady, exitEarly]);
   return child;
 }
 
