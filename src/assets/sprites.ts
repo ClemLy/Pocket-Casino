@@ -563,13 +563,15 @@ export const SPRITES = {
 export type SpriteName = keyof typeof SPRITES;
 
 export const DEFAULT_PALETTE: Record<string, string> = {
-  o: '#050807',
-  w: '#f4ecd8',
-  a: '#f2c14e',
-  s: '#e8b48c',
-  h: '#7a4a22',
-  c: '#d7263d',
-  k: '#12100d',
-  g: '#24492f',
-  m: '#8a8f98',
+  o: '#140e0a',
+  w: '#fffaf0',
+  a: '#f4b53b',
+  s: '#f0bf96',
+  d: '#c98b63',
+  h: '#6e3f1d',
+  c: '#d22a46',
+  k: '#110f0d',
+  g: '#1e6c51',
+  m: '#9aa1ab',
+  y: '#f4b53b',
 };

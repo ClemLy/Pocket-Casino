@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { MotionConfig } from 'motion/react';
 import { setSoundEnabled, unlockAudio } from './audio/sfx';
 import { ChipRain } from './components/ChipRain';
+import { FeltBackdrop } from './components/FeltBackdrop';
 import { Modal } from './components/Modal';
 import { Toasts } from './components/Toasts';
 import { TopBar } from './components/TopBar';
@@ -23,6 +25,14 @@ const SCREEN_TITLE: Record<Screen, string> = {
   poker: 'Poker Roguelike',
   blackjack: 'Blackjack Arcade',
   roulette: 'Turbo Roulette',
+};
+
+/** Nom de la table affiche dans le rail, a cote de l'enseigne. */
+const PLACE: Record<Screen, string | undefined> = {
+  lobby: undefined,
+  poker: 'Table de poker',
+  blackjack: 'Table de blackjack',
+  roulette: 'Roulette',
 };
 
 export default function App() {
@@ -74,57 +84,70 @@ export default function App() {
   const showBroke = bank === 0 && !brokeDismissed && !roundActive;
 
   return (
-    <div className={`cabinet${shaking ? ' screen-shake' : ''}`}>
-      <TopBar
-        onBack={screen === 'lobby' ? undefined : () => setScreen('lobby')}
-        onOpenShop={() => setOverlay('shop')}
-        onOpenTrophies={() => setOverlay('trophies')}
-        onOpenRules={() => setOverlay('rules')}
-      />
+    <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>
+      <div
+        className={`cabinet${screen === 'lobby' ? '' : ' cabinet--game'}${shaking ? ' screen-shake' : ''}`}
+      >
+        <FeltBackdrop />
+        <TopBar
+          place={PLACE[screen]}
+          onBack={screen === 'lobby' ? undefined : () => setScreen('lobby')}
+          onOpenShop={() => setOverlay('shop')}
+          onOpenTrophies={() => setOverlay('trophies')}
+          onOpenRules={() => setOverlay('rules')}
+        />
 
-      <main className="grow">
-        {screen === 'lobby' ? (
-          <Lobby
-            onPlay={setScreen}
-            onOpenShop={() => setOverlay('shop')}
-            onOpenRules={() => setOverlay('rules')}
-          />
+        <main key={screen} className="screen-enter">
+          {screen === 'lobby' ? (
+            <Lobby
+              onPlay={setScreen}
+              onOpenShop={() => setOverlay('shop')}
+              onOpenRules={() => setOverlay('rules')}
+            />
+          ) : null}
+          {screen === 'poker' ? <PokerRun /> : null}
+          {screen === 'blackjack' ? <Blackjack onOpenShop={() => setOverlay('shop')} /> : null}
+          {screen === 'roulette' ? <Roulette /> : null}
+        </main>
+
+        {/* A table, chaque pixel de hauteur va au jeu : les reglages restent dans le hall. */}
+        {screen === 'lobby' ? <Footer /> : null}
+
+        {overlay === 'shop' ? (
+          <Modal
+            title="Magasin d'avantages"
+            kicker="Comptoir du casino"
+            onClose={() => setOverlay(null)}
+            wide
+          >
+            <Shop />
+          </Modal>
         ) : null}
-        {screen === 'poker' ? <PokerRun /> : null}
-        {screen === 'blackjack' ? <Blackjack onOpenShop={() => setOverlay('shop')} /> : null}
-        {screen === 'roulette' ? <Roulette /> : null}
-      </main>
 
-      <Footer />
+        {overlay === 'trophies' ? (
+          <Modal title="Trophées" kicker="Vitrine" onClose={() => setOverlay(null)} wide>
+            <Trophies />
+          </Modal>
+        ) : null}
 
-      {overlay === 'shop' ? (
-        <Modal title="Magasin d'avantages" onClose={() => setOverlay(null)}>
-          <Shop />
-        </Modal>
-      ) : null}
+        {overlay === 'rules' ? (
+          <Modal
+            title="Carnet de règles"
+            kicker="Casino Guide and Rules"
+            onClose={() => setOverlay(null)}
+            wide
+            subheader={<RuleBookTabs tab={ruleTab} onChange={setRuleTab} />}
+          >
+            <RuleBook tab={ruleTab} />
+          </Modal>
+        ) : null}
 
-      {overlay === 'trophies' ? (
-        <Modal title="Trophées" onClose={() => setOverlay(null)}>
-          <Trophies />
-        </Modal>
-      ) : null}
+        {showBroke ? <Broke onRecovered={() => setBrokeDismissed(true)} /> : null}
 
-      {overlay === 'rules' ? (
-        <Modal
-          title="Casino Guide and Rules"
-          onClose={() => setOverlay(null)}
-          wide
-          subheader={<RuleBookTabs tab={ruleTab} onChange={setRuleTab} />}
-        >
-          <RuleBook tab={ruleTab} />
-        </Modal>
-      ) : null}
-
-      {showBroke ? <Broke onRecovered={() => setBrokeDismissed(true)} /> : null}
-
-      <Toasts />
-      <ChipRain />
-    </div>
+        <Toasts />
+        <ChipRain />
+      </div>
+    </MotionConfig>
   );
 }
 
@@ -135,14 +158,12 @@ function Footer() {
   const [confirming, setConfirming] = useState(false);
 
   return (
-    <footer className="shell row row--between row--wrap" style={{ paddingBottom: 'var(--u8)' }}>
-      <span className="t-body t-muted">
-        Jetons virtuels uniquement. Aucun argent réel, aucun achat, aucune publicité.
-      </span>
-      <div className="row row--wrap">
+    <footer className="footer">
+      <span>Jetons virtuels uniquement. Aucun argent réel, aucun achat, aucune publicité.</span>
+      <div className="footer__actions">
         <button
           type="button"
-          className={`btn btn--sm${reducedMotion ? '' : ' btn--ghost'}`}
+          className="link-btn"
           aria-pressed={reducedMotion}
           onClick={() => setReducedMotion(!reducedMotion)}
         >
@@ -152,7 +173,7 @@ function Footer() {
           <>
             <button
               type="button"
-              className="btn btn--sm btn--danger"
+              className="link-btn link-btn--danger"
               onClick={() => {
                 resetProgress();
                 setConfirming(false);
@@ -160,20 +181,12 @@ function Footer() {
             >
               Confirmer la remise à zéro
             </button>
-            <button
-              type="button"
-              className="btn btn--sm btn--ghost"
-              onClick={() => setConfirming(false)}
-            >
+            <button type="button" className="link-btn" onClick={() => setConfirming(false)}>
               Annuler
             </button>
           </>
         ) : (
-          <button
-            type="button"
-            className="btn btn--sm btn--ghost"
-            onClick={() => setConfirming(true)}
-          >
+          <button type="button" className="link-btn" onClick={() => setConfirming(true)}>
             Repartir de zéro
           </button>
         )}

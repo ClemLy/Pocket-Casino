@@ -1,99 +1,110 @@
 /* ==========================================================================
    Cartes a jouer
-   Dessinees maison : bordure pixel, papier ivoire granuleux, enseignes en
-   sprites. Aucune police d'icones, aucun caractere Unicode de couleur.
+   Trois couches : l'ombre reste posee sur le tapis, la "levee" porte le
+   survol, la selection et l'inclinaison, le "flip" porte le retournement.
    ========================================================================== */
 
 .card {
-  --card-w: 62px;
-  --card-h: 90px;
+  --card-w: 72px;
+  --card-h: 100px;
+  /* L'index suit la largeur : une carte se redimensionne en changeant deux valeurs. */
+  --rank-fs: max(14px, calc(var(--card-w) * 0.3));
+  --lift: 0px;
+  --scale: 1;
   position: relative;
+  display: block;
+  flex: 0 0 auto;
   width: var(--card-w);
   height: var(--card-h);
-  flex: 0 0 auto;
-  background: linear-gradient(178deg, #fdf7e6 0%, #f1e6cb 60%, #e6d8b8 100%);
-  border: 3px solid var(--ink-900);
-  box-shadow:
-    inset 0 0 0 2px rgba(255, 255, 255, 0.75),
-    inset 0 -3px 0 rgba(120, 96, 52, 0.28),
-    3px 4px 0 rgba(0, 0, 0, 0.5);
-  color: var(--ink-900);
-  user-select: none;
+  padding: 0;
+  color: var(--noir-700);
   transform: rotate(var(--tilt, 0deg));
-  transition:
-    transform var(--speed) ease-out,
-    box-shadow var(--speed) ease-out;
-}
-
-/* Grain papier : la meme texture que le feutre, en beaucoup plus discret. */
-.card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: var(--felt-grain);
-  background-size: 60px 60px;
-  opacity: 0.12;
-  mix-blend-mode: multiply;
-  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
 }
 
 .card--sm {
-  --card-w: 44px;
-  --card-h: 64px;
-  border-width: 2px;
+  --card-w: 50px;
+  --card-h: 70px;
 }
 
 .card--lg {
-  --card-w: 78px;
-  --card-h: 112px;
+  --card-w: 88px;
+  --card-h: 124px;
 }
 
-/* Cartes cliquables (main du poker) */
-.card--interactive {
-  cursor: pointer;
+/* Ombre portee nette : elle ne monte pas avec la carte. */
+.card__shadow {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 8, 6, 0.42);
+  transform: translate(3px, 5px);
+  transition:
+    transform var(--t-base) var(--ease-out),
+    opacity var(--t-base) var(--ease-out);
 }
 
-.card--interactive:hover {
-  transform: rotate(var(--tilt, 0deg)) translateY(-6px);
+.card__lift {
+  --rx: 0deg;
+  --ry: 0deg;
+  --gx: 50%;
+  --gy: 30%;
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform: perspective(700px) translateY(var(--lift)) rotateX(var(--rx)) rotateY(var(--ry))
+    scale(var(--scale));
+  transition: transform 180ms var(--ease-out);
+  transform-style: preserve-3d;
 }
 
-.card--selected {
-  transform: rotate(var(--tilt, 0deg)) translateY(-16px);
+.card__flip {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-style: preserve-3d;
+  transition: transform 420ms var(--ease-in-out);
+}
+
+.card__flip.is-down {
+  transform: rotateY(180deg);
+}
+
+/* --------------------------------------------------------------- faces */
+
+.card__face {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background:
+    radial-gradient(120% 80% at 30% 0%, #fffdf6 0%, transparent 60%),
+    linear-gradient(180deg, var(--ivory-50), var(--ivory-100) 70%, var(--ivory-200));
   box-shadow:
-    inset 0 0 0 2px var(--brass-500),
-    0 0 0 3px var(--brass-500),
-    3px 6px 0 rgba(0, 0, 0, 0.55);
+    0 -2px 0 0 #1a120d,
+    0 2px 0 0 #1a120d,
+    -2px 0 0 0 #1a120d,
+    2px 0 0 0 #1a120d,
+    inset 0 -3px 0 rgba(120, 92, 48, 0.18);
 }
 
-.card--selected:hover {
-  transform: rotate(var(--tilt, 0deg)) translateY(-18px);
+.card__face--back {
+  transform: rotateY(180deg);
+  background: var(--rouge-600);
 }
 
-/* Carte qui compte dans la combinaison : liseré or et petite pulsation. */
-.card--scoring {
-  box-shadow:
-    inset 0 0 0 2px var(--led-green),
-    0 0 0 3px var(--led-green),
-    3px 6px 0 rgba(0, 0, 0, 0.55);
-}
-
-.card--dimmed {
-  filter: saturate(0.4) brightness(0.7);
-}
-
-.card--burned {
-  filter: grayscale(1) brightness(0.5);
-  transform: rotate(var(--tilt, 0deg)) translateY(8px) scale(0.94);
-}
-
-/* Coins : rang et mini enseigne */
+/* Coins : rang en gros pixels et petite enseigne */
 .card__corner {
   position: absolute;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1px;
-  line-height: 1;
+  line-height: 0.8;
 }
 
 .card__corner--tl {
@@ -108,30 +119,19 @@
 }
 
 .card__rank {
-  font-family: var(--font-arcade);
-  font-size: 9px;
-}
-
-.card--sm .card__rank {
-  font-size: 7px;
-}
-
-.card--lg .card__rank {
-  font-size: 11px;
+  font-family: var(--font-display);
+  font-size: var(--rank-fs);
+  letter-spacing: -0.02em;
 }
 
 .card__rank--ten {
-  letter-spacing: -1px;
+  letter-spacing: -0.12em;
+  margin-left: -0.08em;
 }
 
-/* Zone centrale : pips, figure ou grande enseigne */
 .card__body {
   position: absolute;
-  inset: 16px 11px;
-}
-
-.card--sm .card__body {
-  inset: 12px 8px;
+  inset: 15% 30%;
 }
 
 .card__pip {
@@ -143,81 +143,217 @@
   transform: translate(-50%, -50%) rotate(180deg);
 }
 
-.card__center {
+.card__ace {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
 }
 
-/* Cadre des figures : petit encadrement facon carte de bistrot. */
+/* Cadre des figures : double filet a la couleur de l'enseigne, fond trame. */
 .card__figure {
   position: absolute;
-  inset: -2px;
+  inset: -6% -38%;
   display: grid;
-  place-items: center;
-  border: 2px solid currentColor;
-  background: rgba(255, 255, 255, 0.35);
-}
-
-/* Dos de carte : treillis de losanges facon jeu de bistrot.
-   Genere en CSS plutot qu'avec un sprite etire, pour que le motif garde le
-   meme pas quelle que soit la taille de la carte. */
-.card--back {
-  background: var(--crimson-600);
+  place-items: end center;
   overflow: hidden;
+  background-color: var(--ivory-200);
+  background-image: radial-gradient(rgba(60, 40, 20, 0.12) 1px, transparent 1.2px);
+  background-size: 4px 4px;
+  box-shadow:
+    inset 0 0 0 2px currentColor,
+    inset 0 0 0 4px var(--ivory-50),
+    inset 0 0 0 5px currentColor;
 }
 
+.card__figure svg {
+  margin-bottom: 5px;
+}
+
+/* Dos : treillis de laiton sur velours rouge, medaillon central. */
 .card__back-art {
   position: absolute;
-  inset: 3px;
-  background-color: var(--crimson-600);
+  inset: 4px;
+  display: block;
+  background-color: var(--rouge-600);
   background-image:
-    repeating-linear-gradient(45deg, rgba(242, 193, 78, 0.85) 0 1px, transparent 1px 7px),
-    repeating-linear-gradient(-45deg, rgba(242, 193, 78, 0.85) 0 1px, transparent 1px 7px),
-    repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.28) 0 3px, transparent 3px 7px);
+    repeating-linear-gradient(45deg, rgba(255, 205, 87, 0.55) 0 2px, transparent 2px 9px),
+    repeating-linear-gradient(-45deg, rgba(255, 205, 87, 0.55) 0 2px, transparent 2px 9px);
   box-shadow:
-    inset 0 0 0 2px var(--ink-900),
-    inset 0 0 0 4px var(--crimson-500);
+    0 0 0 2px var(--brass-500),
+    0 0 0 4px var(--rouge-700);
 }
 
-/* ==========================================================================
-   Distribution : chaque carte entre en scene avec un leger decalage
-   ========================================================================== */
+.card__back-art::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--rouge-700);
+  box-shadow:
+    0 0 0 2px var(--brass-400),
+    0 0 0 4px var(--rouge-600),
+    0 0 0 6px var(--brass-600);
+}
 
-@keyframes card-deal {
-  0% {
-    transform: translate(var(--deal-x, 120px), var(--deal-y, -140px)) rotate(-24deg) scale(0.85);
-    opacity: 0;
+.card__back-art::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--brass-300);
+}
+
+/* Reflet qui suit le pointeur, tres discret : une carte, pas un hologramme. */
+.card__glare {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle at var(--gx) var(--gy),
+    rgba(255, 255, 255, 0.35),
+    transparent 55%
+  );
+  mix-blend-mode: soft-light;
+  transition: opacity var(--t-base) ease;
+}
+
+/* ---------------------------------------------------------- etats */
+
+.card--interactive {
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card--interactive:hover {
+    --lift: -8px;
+    --scale: 1.04;
+    z-index: 2;
   }
-  70% {
+
+  .card--interactive:hover .card__glare {
     opacity: 1;
+  }
+
+  .card--interactive:hover .card__shadow {
+    transform: translate(4px, 9px);
+    opacity: 0.75;
+  }
+}
+
+.card--interactive:active .card__lift {
+  transition-duration: 60ms;
+  scale: 0.97;
+}
+
+.card--selected {
+  --lift: -24px;
+  z-index: 3;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card--selected:hover {
+    --lift: -27px;
+  }
+}
+
+.card--selected .card__shadow {
+  transform: translate(5px, 12px);
+  opacity: 0.35;
+}
+
+.card--selected .card__face--front {
+  box-shadow:
+    0 -2px 0 0 #1a120d,
+    0 2px 0 0 #1a120d,
+    -2px 0 0 0 #1a120d,
+    2px 0 0 0 #1a120d,
+    0 0 0 5px var(--brass-400),
+    0 0 18px 4px rgba(255, 205, 87, 0.35);
+}
+
+/* Carte qui marque : liseré bleu jetons et petit saut. */
+.card--scoring .card__face--front {
+  box-shadow:
+    0 -2px 0 0 #1a120d,
+    0 2px 0 0 #1a120d,
+    -2px 0 0 0 #1a120d,
+    2px 0 0 0 #1a120d,
+    0 0 0 5px var(--chips-500),
+    0 0 20px 4px rgba(58, 158, 255, 0.4);
+}
+
+.card--scoring .card__lift {
+  animation: card-pop 300ms var(--ease-out);
+}
+
+@keyframes card-pop {
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 1.16;
   }
   100% {
-    transform: translate(0, 0) rotate(var(--tilt, 0deg)) scale(1);
+    scale: 1;
+  }
+}
+
+.card--dimmed .card__face--front {
+  filter: saturate(0.5) brightness(0.72);
+}
+
+.card--burned {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+/* Les cartes desactivees de la main restent lisibles : on ne les grise pas. */
+button.card:disabled {
+  cursor: default;
+}
+
+/* ---------------------------------------------------------- arrivees */
+
+@keyframes card-deal {
+  from {
+    opacity: 0;
+    transform: translate(var(--deal-x, 260px), var(--deal-y, -180px)) rotate(-18deg);
+  }
+  60% {
     opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) rotate(var(--tilt, 0deg));
   }
 }
 
 .card--dealing {
-  animation: card-deal 260ms cubic-bezier(0.2, 0.85, 0.35, 1) backwards;
+  animation: card-deal 380ms var(--ease-out) backwards;
   animation-delay: var(--deal-delay, 0ms);
 }
 
-@keyframes card-flip {
-  0% {
-    transform: rotateY(0deg) rotate(var(--tilt, 0deg));
+@keyframes card-flip-in {
+  from {
+    transform: rotateY(180deg);
   }
-  50% {
-    transform: rotateY(90deg) rotate(var(--tilt, 0deg));
-  }
-  100% {
-    transform: rotateY(0deg) rotate(var(--tilt, 0deg));
+  to {
+    transform: rotateY(0deg);
   }
 }
 
-.card--flipping {
-  animation: card-flip 280ms ease-in-out;
+.card--flip-in .card__flip:not(.is-down) {
+  animation: card-flip-in 420ms var(--ease-in-out) backwards;
+  animation-delay: var(--flip-delay, 0ms);
 }
 
 /* ==========================================================================
@@ -226,17 +362,49 @@
 
 .hand {
   display: flex;
-  gap: var(--u2);
+  gap: var(--s2);
   flex-wrap: wrap;
   justify-content: center;
-  min-height: calc(var(--card-h, 90px) + var(--u4));
-  padding-top: var(--u4);
 }
 
-.hand--tight {
-  gap: 2px;
+.hand--overlap > .card + .card {
+  margin-left: calc(var(--card-w, 72px) * -0.45);
 }
 
-.hand--stacked > .card + .card {
-  margin-left: -26px;
+@media (max-width: 720px) {
+  .card {
+    --card-w: 56px;
+    --card-h: 78px;
+  }
+
+  .card--lg {
+    --card-w: 62px;
+    --card-h: 87px;
+  }
+
+  .card--sm {
+    --card-w: 42px;
+    --card-h: 59px;
+  }
+}
+
+/* Les pictos suivent la taille de la carte plutot que des pixels fixes. */
+.card__corner svg {
+  width: calc(var(--card-w) * 0.13);
+  height: auto;
+}
+
+.card__pip svg {
+  width: calc(var(--card-w) * 0.18);
+  height: auto;
+}
+
+.card__ace svg {
+  width: calc(var(--card-w) * 0.52);
+  height: auto;
+}
+
+.card__figure svg {
+  width: auto;
+  height: calc(var(--card-h) * 0.62);
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PORTRAITS } from './portraits';
 import { DEFAULT_PALETTE, SPRITES } from './sprites';
 
 describe('sprites pixel art', () => {
@@ -29,6 +30,19 @@ describe('sprites pixel art', () => {
     for (const [name, sprite] of Object.entries(SPRITES)) {
       expect(sprite.width, `sprite "${name}"`).toBe(16);
       expect(sprite.height, `sprite "${name}"`).toBe(16);
+    }
+  });
+
+  it('dessine des portraits de figures reguliers et dans la palette', () => {
+    for (const [name, portrait] of Object.entries(PORTRAITS)) {
+      const widths = new Set(portrait.rows.map((row) => row.length));
+      expect(widths, `portrait "${name}"`).toHaveLength(1);
+      for (const row of portrait.rows) {
+        for (const char of row) {
+          if (char === '.') continue;
+          expect(DEFAULT_PALETTE[char], `portrait "${name}" : couleur "${char}"`).toBeDefined();
+        }
+      }
     }
   });
 });

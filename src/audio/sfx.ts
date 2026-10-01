@@ -200,3 +200,26 @@ export function sfxTrophy(): void {
 export function sfxSuspense(): void {
   tone({ freq: 110, duration: 0.6, gain: 0.14, type: 'sawtooth', sweepTo: 220 });
 }
+
+/**
+ * Tic du decompte de score : chaque carte qui marque monte d'un demi-ton,
+ * l'oreille sent la main grimper avant de voir le total.
+ */
+export function sfxScoreTick(step = 0): void {
+  const freq = 440 * Math.pow(2, Math.min(step, 14) / 12);
+  tone({ freq, duration: 0.07, type: 'square', gain: 0.16 });
+  tone({ freq: freq * 2, duration: 0.05, type: 'triangle', gain: 0.08, delay: 0.01 });
+}
+
+/** Coup de multiplicateur : grave, court, avec un claquement. */
+export function sfxMult(step = 0): void {
+  const freq = 196 * Math.pow(2, Math.min(step, 8) / 12);
+  tone({ freq, duration: 0.12, type: 'sawtooth', gain: 0.14, sweepTo: freq * 1.5 });
+  noise({ duration: 0.05, gain: 0.18, filterFrom: 3000, filterTo: 1200, q: 2 });
+}
+
+/** Le total tombe sur la table. */
+export function sfxSlam(): void {
+  tone({ freq: 130, duration: 0.22, type: 'square', gain: 0.2, sweepTo: 65 });
+  noise({ duration: 0.16, gain: 0.32, filterFrom: 900, filterTo: 120, q: 0.7 });
+}

@@ -29,23 +29,18 @@ export function Shop() {
   const buyItem = useCasino((s) => s.buyItem);
 
   return (
-    <div className="col" style={{ gap: 'var(--u5)' }}>
-      <div className="row row--between">
-        <p className="t-body t-muted">
-          Les jetons se consomment à l&apos;usage. Le stock est partagé entre toutes les tables.
-        </p>
-        <span className="led" style={{ fontSize: 22 }}>
-          {formatMoney(bank)}
-        </span>
-      </div>
+    <div className="counter-shop">
+      <p className="t-body t-muted">
+        Les jetons se consomment à l&apos;usage. Le stock est partagé entre toutes les tables.
+      </p>
 
       {(['blackjack', 'poker', 'roulette'] as ItemCategory[]).map((category) => (
-        <section key={category} className="col" style={{ gap: 'var(--u3)' }}>
-          <h3 className="t-label row">
+        <section key={category} className="counter-shop__section">
+          <h3 className="engraved">
             <Sprite
               name={CATEGORY_SPRITE[category]}
-              size={18}
-              palette={{ a: 'var(--brass-500)' }}
+              size={20}
+              palette={{ a: 'var(--brass-400)' }}
             />
             {CATEGORY_LABEL[category]}
           </h3>
@@ -54,22 +49,29 @@ export function Shop() {
               const item = ITEMS[id];
               const owned = inventory[id];
               const full = owned >= item.maxStack;
+              const affordable = bank >= item.price;
               return (
-                <article key={id} className="tile">
+                <article key={id} className="tile item-tile">
                   <div className="tile__head">
-                    <Sprite name="chip" size={20} />
+                    <span className="item-tile__coin" aria-hidden="true">
+                      <Sprite name="chip" size={24} />
+                    </span>
                     <span className="tile__name">{item.name}</span>
-                    {owned > 0 ? <span className="badge badge--green">x{owned}</span> : null}
                   </div>
                   <p className="tile__desc">{item.short}</p>
                   <div className="tile__foot">
-                    <span className="led" style={{ fontSize: 18 }}>
-                      {formatMoney(item.price)}
+                    <span className="item-tile__price">
+                      <span className={`price${affordable ? '' : ' price--short'}`}>
+                        {formatMoney(item.price)}
+                      </span>
+                      <span className={`item-tile__stock${owned > 0 ? ' is-stocked' : ''}`}>
+                        En stock {owned} / {item.maxStack}
+                      </span>
                     </span>
                     <button
                       type="button"
                       className="btn btn--sm"
-                      disabled={bank < item.price || full}
+                      disabled={!affordable || full}
                       onClick={() => buyItem(id)}
                     >
                       {full ? 'Stock plein' : 'Acheter'}

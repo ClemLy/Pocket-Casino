@@ -4,3 +4,8 @@ node_modules
 package-lock.json
 screenshots
 src/assets/fonts
+.agents
+.claude
+.codex
+.cursor
+skills-lock.json

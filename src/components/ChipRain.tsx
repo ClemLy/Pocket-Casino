@@ -18,11 +18,11 @@ interface FallingChip {
 }
 
 const PALETTE: ReadonlyArray<[string, string]> = [
-  ['#d7263d', '#f4ecd8'],
-  ['#305c3c', '#f4ecd8'],
-  ['#12100d', '#f4ecd8'],
-  ['#7b5ea7', '#f2c14e'],
-  ['#f2c14e', '#12100d'],
+  ['#d22a46', '#fff4dc'],
+  ['#1f8a5a', '#fff4dc'],
+  ['#24201c', '#f5ecd7'],
+  ['#7448d8', '#ffcd57'],
+  ['#f4b53b', '#1d1611'],
 ];
 
 const GRAVITY = 0.55;

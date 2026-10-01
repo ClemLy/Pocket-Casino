@@ -1,5 +1,14 @@
 import { useEffect } from 'react';
 import { useToasts } from '../store/useToasts';
+import { Sprite } from './Sprite';
+import type { SpriteName } from '../assets/sprites';
+
+const ICON: Record<string, SpriteName> = {
+  info: 'chip',
+  gain: 'coin',
+  perte: 'skull',
+  trophée: 'trophy',
+};
 
 /** Pile de notifications en bas a droite, avec disparition automatique. */
 export function Toasts() {
@@ -20,12 +29,17 @@ export function Toasts() {
         <button
           key={t.id}
           type="button"
-          className={`toast toast--${t.kind}`}
+          className={`toast toast--${t.kind === 'trophée' ? 'trophee' : t.kind}`}
           onClick={() => dismiss(t.id)}
           aria-label={`Masquer : ${t.title}`}
         >
-          <div className="toast__title">{t.title}</div>
-          {t.detail ? <div className="toast__detail">{t.detail}</div> : null}
+          <span className="toast__icon" aria-hidden="true">
+            <Sprite name={ICON[t.kind] ?? 'chip'} size={24} />
+          </span>
+          <span className="toast__text">
+            <span className="toast__title">{t.title}</span>
+            {t.detail ? <span className="toast__detail">{t.detail}</span> : null}
+          </span>
         </button>
       ))}
     </div>

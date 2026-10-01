@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Card, Rank, Suit } from './cards';
-import { applyJokers, JOKERS, type JokerContext } from './jokers';
+import { applyJokers, applyJokersDetailed, JOKERS, type JokerContext } from './jokers';
 import { createRng } from './rng';
 
 function hand(spec: string): Card[] {
@@ -84,5 +84,22 @@ describe('applyJokers', () => {
     }
     expect(hits / 4000).toBeGreaterThan(0.22);
     expect(hits / 4000).toBeLessThan(0.28);
+  });
+});
+
+describe('applyJokersDetailed', () => {
+  it('donne le même total que applyJokers et un déclenchement par joker actif', () => {
+    const ids = ['videur', 'croupier-vereux', 'compteur-de-cartes', 'joker-fantome'];
+    const detailed = applyJokersDetailed(ids, ctx({ discardsLeft: 3 }));
+    const { triggers, ...aggregate } = detailed;
+    expect(aggregate).toEqual(applyJokers(ids, ctx({ discardsLeft: 3 })));
+    expect(triggers.map((t) => t.id)).toEqual(['videur', 'croupier-vereux', 'compteur-de-cartes']);
+  });
+
+  it("n'évalue chaque joker qu'une fois, même quand il tire au hasard", () => {
+    let calls = 0;
+    const rng = { ...ctx().rng, chance: () => (calls++, true) };
+    applyJokersDetailed(['machine-a-sous'], ctx({ rng }));
+    expect(calls).toBe(1);
   });
 });

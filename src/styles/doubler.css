@@ -1,180 +1,387 @@
 /* ==========================================================================
-   Quitte ou Double : la mecanique signature
+   Scenes plein ecran : fin de manche et Quitte ou Double
+   Un projecteur sur la table, tout le reste dans l'ombre.
    ========================================================================== */
 
-.doubler-backdrop {
+.stage-backdrop {
   position: fixed;
   inset: 0;
   z-index: 55;
   display: grid;
   place-items: center;
-  padding: var(--u4);
-  background: rgba(3, 8, 5, 0.88);
+  padding: var(--s5);
+  background:
+    radial-gradient(60% 55% at 50% 45%, rgba(255, 190, 90, 0.12), transparent 70%),
+    rgba(2, 6, 5, 0.86);
+  animation: fade-in 200ms ease-out;
+  overflow-y: auto;
 }
 
-.doubler {
-  width: min(460px, 100%);
-  padding: var(--u6) var(--u5);
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s2);
+  width: min(480px, 100%);
+  padding: var(--s8) var(--s6) var(--s6);
   text-align: center;
-  background: linear-gradient(180deg, var(--felt-600), var(--felt-800));
-  border: var(--u1) solid var(--ink-900);
+  background: linear-gradient(180deg, var(--ebony-800), var(--ebony-900) 70%);
   box-shadow:
-    inset 0 var(--u1) 0 rgba(255, 255, 255, 0.12),
-    0 var(--u3) 0 rgba(0, 0, 0, 0.7);
+    var(--outline),
+    inset 0 var(--px) 0 rgba(255, 230, 190, 0.08),
+    inset 0 0 0 calc(var(--px) * 2) var(--ebony-900),
+    inset 0 0 0 calc(var(--px) * 2 + 1px) rgba(244, 181, 59, 0.22),
+    0 calc(var(--px) * 4) 0 calc(var(--px) * -1) rgba(0, 0, 0, 0.5);
+  animation: modal-in 280ms var(--ease-out);
 }
 
-.doubler__kicker {
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: var(--bone-500);
+.stage--won {
+  box-shadow:
+    var(--outline),
+    inset 0 var(--px) 0 rgba(255, 230, 190, 0.1),
+    inset 0 0 0 calc(var(--px) * 2) var(--ebony-900),
+    inset 0 0 0 calc(var(--px) * 2 + 2px) var(--brass-600),
+    0 0 60px rgba(255, 190, 90, 0.18),
+    0 calc(var(--px) * 4) 0 calc(var(--px) * -1) rgba(0, 0, 0, 0.5);
 }
 
-.doubler__title {
-  margin-top: var(--u2);
-  font-size: clamp(15px, 4.4vw, 22px);
-  color: var(--brass-500);
-  text-shadow: 3px 3px 0 var(--ink-900);
-}
-
-.doubler__pot {
-  margin: var(--u4) auto var(--u3);
-  display: inline-block;
-  font-size: 30px;
-}
-
-.doubler__stage {
+.stage__emblem {
+  position: relative;
   display: grid;
   place-items: center;
-  min-height: 124px;
-  margin: var(--u4) 0;
+  width: 120px;
+  height: 104px;
+  margin-top: calc(var(--s10) * -1 - 24px);
 }
 
-.doubler__streak {
-  display: flex;
-  justify-content: center;
-  gap: var(--u2);
-  margin-bottom: var(--u4);
+.stage__emblem > svg {
+  position: relative;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.5));
+  animation: emblem-in 520ms var(--ease-back) both;
 }
 
-.doubler__step {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 26px;
-  font-size: 9px;
-  color: var(--bone-500);
-  background: var(--ink-900);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+@keyframes emblem-in {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-.doubler__step--done {
-  color: var(--ink-900);
-  background: var(--led-green);
-  border-color: var(--ink-900);
+/* Rayons de lumiere derriere la piece : seize rais en conic, tres lents. */
+.stage__rays {
+  position: absolute;
+  inset: -40px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    rgba(255, 205, 87, 0.28) 0deg 11.25deg,
+    transparent 11.25deg 22.5deg
+  );
+  mask: radial-gradient(circle, #000 20%, transparent 68%);
+  -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%);
+  animation: spin 16s linear infinite;
 }
 
-.doubler__step--current {
-  color: var(--ink-900);
-  background: var(--brass-500);
-  border-color: var(--ink-900);
-  animation: blink 620ms steps(1, end) infinite;
+.stage__kicker {
+  margin-top: var(--s2);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ivory-400);
 }
 
-.doubler__choices {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--u3);
+.stage--won .stage__kicker {
+  color: var(--win);
 }
 
-.guess-btn {
-  padding: var(--u4);
-  font-size: 12px;
-  letter-spacing: 2px;
-  color: var(--bone-100);
-  border: var(--u1) solid var(--ink-900);
+.stage--lost .stage__kicker {
+  color: var(--lose);
+}
+
+.stage__title {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 7vw, 54px);
+  line-height: 0.9;
+  color: var(--brass-300);
+  text-shadow:
+    0 var(--px) 0 var(--brass-700),
+    0 calc(var(--px) * 2) 0 var(--brass-800),
+    0 calc(var(--px) * 3) 0 rgba(0, 0, 0, 0.55);
+  text-wrap: balance;
+}
+
+.stage--lost .stage__title {
+  color: var(--ivory-100);
+  text-shadow:
+    0 var(--px) 0 var(--ebony-600),
+    0 calc(var(--px) * 2) 0 var(--ebony-700),
+    0 calc(var(--px) * 3) 0 rgba(0, 0, 0, 0.55);
+}
+
+.stage__detail {
+  max-width: 38ch;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: 1.2;
+  color: var(--ivory-300);
+  text-wrap: balance;
+}
+
+.stage__amount {
+  margin: var(--s3) 0 var(--s2);
+  padding: var(--s2) var(--s6) var(--s3);
+  font-size: 56px;
+  line-height: 0.9;
+  color: var(--win);
+  background: #06110b;
   box-shadow:
-    inset 0 var(--u1) 0 rgba(255, 255, 255, 0.2),
-    0 var(--u2) 0 rgba(0, 0, 0, 0.6);
-  transition: transform var(--speed-fast) steps(2);
+    var(--outline),
+    inset 0 var(--px) 0 rgba(0, 0, 0, 0.7),
+    inset 0 0 22px rgba(95, 224, 138, 0.16);
+  text-shadow: 0 0 14px rgba(95, 224, 138, 0.55);
 }
 
-.guess-btn:active:not(:disabled) {
-  transform: translateY(var(--u2));
-  box-shadow: inset 0 var(--u1) 0 rgba(255, 255, 255, 0.2);
+.stage__amount.is-zero {
+  color: var(--lose);
+  background: #140707;
+  box-shadow:
+    var(--outline),
+    inset 0 var(--px) 0 rgba(0, 0, 0, 0.7),
+    inset 0 0 22px rgba(255, 92, 98, 0.14);
+  text-shadow: 0 0 14px rgba(255, 92, 98, 0.5);
 }
 
-.guess-btn--rouge {
-  background: var(--crimson-500);
-}
-
-.guess-btn--noir {
-  background: var(--ink-700);
-}
-
-.guess-btn:disabled {
-  filter: grayscale(0.7) brightness(0.5);
-}
-
-.doubler__verdict {
-  font-size: 13px;
-  line-height: 1.6;
-  margin-bottom: var(--u4);
-}
-
-.doubler__actions {
+.stage__actions {
   display: flex;
-  gap: var(--u3);
-  margin-top: var(--u4);
+  flex-direction: column;
+  gap: var(--s3);
+  width: 100%;
+  margin-top: var(--s3);
 }
 
-.doubler__actions > * {
+.stage__actions--row {
+  flex-direction: row;
+}
+
+.stage__actions--row > * {
   flex: 1;
 }
 
-/* Le gros bouton clignotant qui appelle le Quitte ou Double. */
-.doubler-call {
-  position: relative;
-  width: 100%;
-  padding: var(--u5);
-  font-size: clamp(12px, 3.2vw, 17px);
-  letter-spacing: 2px;
-  color: var(--ink-900);
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--brass-500) 0 14px,
-    var(--brass-600) 14px 28px
-  );
-  border: var(--u1) solid var(--ink-900);
-  box-shadow:
-    inset 0 var(--u1) 0 rgba(255, 255, 255, 0.45),
-    0 var(--u2) 0 var(--ink-900),
-    0 0 24px rgba(242, 193, 78, 0.45);
-  animation: call-pulse 900ms steps(2, end) infinite;
+.stage__verdict {
+  margin-top: var(--s2);
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  line-height: 1.1;
+  text-wrap: balance;
 }
 
-@keyframes call-pulse {
-  0%,
-  100% {
-    filter: brightness(1);
+.stage__escape {
+  margin-top: var(--s2);
+}
+
+/* --------------------------------------------- le bouton signature */
+
+.doubler-call {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: var(--s4) var(--s4) calc(var(--s4) + var(--px));
+  overflow: hidden;
+  color: var(--ebony-950);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--brass-400) 0 16px,
+    var(--brass-500) 16px 32px
+  );
+  background-size: 200% 100%;
+  box-shadow:
+    var(--outline),
+    inset 0 calc(var(--px) * 2) 0 var(--brass-200),
+    inset 0 calc(var(--px) * -1) 0 var(--brass-700),
+    0 calc(var(--px) * 2) 0 0 var(--line),
+    0 0 32px rgba(255, 190, 90, 0.4);
+  animation: stripes 1.4s linear infinite;
+  transition: transform var(--t-press) var(--ease-out);
+}
+
+@keyframes stripes {
+  to {
+    background-position: -45px 0;
   }
-  50% {
-    filter: brightness(1.35);
+}
+
+.doubler-call__label {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.doubler-call__hint {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--brass-800);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .doubler-call:hover {
+    transform: translateY(-2px);
   }
 }
 
 .doubler-call:active {
-  transform: translateY(var(--u2));
-  box-shadow: inset 0 var(--u1) 0 rgba(255, 255, 255, 0.45);
+  transform: translateY(calc(var(--px) * 2));
+  transition-duration: 40ms;
 }
 
-/* Ecran de resultat de manche */
-.result-panel {
-  text-align: center;
-  padding: var(--u6) var(--u4);
+/* --------------------------------------------- echelle x2 x4 x8 */
+
+.ladder {
+  display: flex;
+  gap: var(--s2);
+  margin: var(--s2) 0;
 }
 
-.result-panel__amount {
-  display: inline-block;
-  margin: var(--u3) 0 var(--u5);
-  font-size: 34px;
+.ladder__step {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 36px;
+  font-size: var(--fs-md);
+  color: var(--ivory-500);
+  background: var(--ebony-950);
+  box-shadow: inset 0 0 0 2px var(--ebony-700);
+}
+
+.ladder__step.is-done {
+  color: var(--ebony-950);
+  background: var(--win);
+  box-shadow: inset 0 -3px 0 var(--win-deep);
+}
+
+.ladder__step.is-current {
+  color: var(--ebony-950);
+  background: var(--brass-400);
+  box-shadow:
+    inset 0 -3px 0 var(--brass-700),
+    0 0 16px rgba(255, 205, 87, 0.5);
+  animation: blink 900ms steps(1, end) infinite;
+}
+
+.double-stage {
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+  margin: var(--s3) 0 var(--s2);
+}
+
+.double-stage .card {
+  --card-w: 96px;
+  --card-h: 134px;
+}
+
+.double-stage.is-tense .card {
+  animation: tense 650ms linear;
+}
+
+@keyframes tense {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  10%,
+  50%,
+  90% {
+    translate: -2px 0;
+  }
+  30%,
+  70% {
+    translate: 2px 0;
+  }
+}
+
+.guess {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+  width: 100%;
+  margin-top: var(--s3);
+}
+
+.guess-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s4) var(--s3) calc(var(--s4) + var(--px));
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ivory-50);
+  transition:
+    transform var(--t-press) var(--ease-out),
+    filter var(--t-fast) ease;
+}
+
+.guess-btn__suits {
+  display: flex;
+  gap: 6px;
+}
+
+.guess-btn--rouge {
+  background: linear-gradient(180deg, var(--rouge-400) 0 6px, var(--rouge-500) 6px);
+  box-shadow:
+    var(--outline),
+    inset 0 calc(var(--px) * -1) 0 var(--rouge-700),
+    0 calc(var(--px) * 2) 0 0 var(--line);
+}
+
+.guess-btn--noir {
+  background: linear-gradient(180deg, var(--noir-600) 0 6px, var(--noir-700) 6px);
+  box-shadow:
+    var(--outline),
+    inset 0 calc(var(--px) * -1) 0 var(--noir-800),
+    0 calc(var(--px) * 2) 0 0 var(--line);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .guess-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    filter: brightness(1.12);
+  }
+}
+
+.guess-btn:active:not(:disabled) {
+  transform: translateY(calc(var(--px) * 2));
+  transition-duration: 40ms;
+}
+
+.guess-btn:disabled {
+  filter: saturate(0.4) brightness(0.6);
+  cursor: wait;
+}
+
+@media (max-width: 520px) {
+  .stage {
+    padding: var(--s8) var(--s4) var(--s5);
+  }
+
+  .stage__amount {
+    font-size: 44px;
+  }
+
+  .stage__actions--row {
+    flex-direction: column;
+  }
 }

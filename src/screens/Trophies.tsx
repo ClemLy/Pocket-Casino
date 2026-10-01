@@ -11,40 +11,46 @@ export function Trophies() {
   const earned = TROPHIES.filter((t) => trophies[t.id]).reduce((sum, t) => sum + t.reward, 0);
 
   return (
-    <div className="col" style={{ gap: 'var(--u4)' }}>
-      <div className="row row--between row--wrap">
-        <p className="t-body">
-          {unlocked} trophée{unlocked > 1 ? 's' : ''} sur {TROPHIES.length}.
-        </p>
-        <span className="led" style={{ fontSize: 20 }}>
-          {formatMoney(earned)} / {formatMoney(totalReward)}
-        </span>
-      </div>
-
-      <div className="meter">
-        <div className="meter__fill" style={{ width: `${(unlocked / TROPHIES.length) * 100}%` }} />
-        <span className="meter__label">
-          {unlocked} / {TROPHIES.length}
-        </span>
+    <div className="showcase">
+      <div className="showcase__summary">
+        <div className="showcase__count">
+          <span className="num showcase__big">{unlocked}</span>
+          <span className="t-muted"> / {TROPHIES.length} trophées</span>
+        </div>
+        <div className="showcase__meter">
+          <div className="meter">
+            <div
+              className="meter__fill"
+              style={{ width: `${(unlocked / TROPHIES.length) * 100}%` }}
+            />
+          </div>
+          <span className="t-label">
+            Primes touchées <span className="t-brass num">{formatMoney(earned)}</span> sur{' '}
+            {formatMoney(totalReward)}
+          </span>
+        </div>
       </div>
 
       <div className="tile-grid">
         {TROPHIES.map((trophy) => {
           const at = trophies[trophy.id];
           return (
-            <article key={trophy.id} className={`tile${at ? ' tile--gold' : ' tile--locked'}`}>
+            <article
+              key={trophy.id}
+              className={`tile trophy${at ? ' tile--gold' : ' tile--locked'}`}
+            >
               <div className="tile__head">
-                <Sprite name={trophy.icon} size={28} title={trophy.name} />
+                <span className={`trophy__medal${at ? ' is-won' : ''}`} aria-hidden="true">
+                  <Sprite name={trophy.icon} size={30} />
+                </span>
                 <span className="tile__name">{trophy.name}</span>
               </div>
               <p className="tile__desc">{trophy.condition}</p>
               <div className="tile__foot">
                 <span className={`badge${at ? ' badge--gold' : ''}`}>
-                  {at ? 'DEBLOQUE' : 'A FAIRE'}
+                  {at ? 'Débloqué' : 'À faire'}
                 </span>
-                <span className="led" style={{ fontSize: 18 }}>
-                  + {formatMoney(trophy.reward)}
-                </span>
+                <span className="price">+ {formatMoney(trophy.reward)}</span>
               </div>
             </article>
           );

@@ -1,0 +1,1424 @@
+/* ==========================================================================
+   Poker roguelike : colonne de score a gauche, table a droite
+   ========================================================================== */
+
+.poker {
+  /* Les cartes de la main suivent la hauteur disponible (cqh), sans jamais
+     descendre sous un format lisible ni monter au-dela du format plein. */
+  --hand-card-h: clamp(80px, 16cqh, 128px);
+  --hand-card-w: calc(var(--hand-card-h) * 0.71);
+  --joker-h: clamp(66px, 12.5cqh, 108px);
+  --joker-w: calc(var(--joker-h) * 0.74);
+  /* Ouverture de l'eventail : angle par carte et courbure. */
+  --fan-step: 2.6deg;
+  --fan-curve: 1.6px;
+
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: var(--s5);
+  height: 100%;
+  min-height: 0;
+}
+
+.poker .card--lg {
+  --card-w: var(--hand-card-w);
+  --card-h: var(--hand-card-h);
+}
+
+/* ------------------------------------------------------- colonne de score */
+
+.poker-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  padding: var(--s4);
+  background: linear-gradient(180deg, var(--ebony-800), var(--ebony-900));
+  box-shadow:
+    var(--outline),
+    inset 0 var(--px) 0 rgba(255, 230, 190, 0.07),
+    inset 0 0 0 calc(var(--px) * 2) var(--ebony-900),
+    inset 0 0 0 calc(var(--px) * 2 + 1px) rgba(244, 181, 59, 0.16),
+    0 calc(var(--px) * 3) 0 calc(var(--px) * -1) rgba(0, 0, 0, 0.45);
+}
+
+.side-ante {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s3);
+}
+
+.side-ante__badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 76px;
+  padding: var(--s2) 0 var(--s3);
+  background: var(--rouge-600);
+  box-shadow:
+    var(--outline),
+    inset 0 var(--px) 0 var(--rouge-400),
+    inset 0 calc(var(--px) * -1) 0 var(--rouge-700);
+}
+
+.side-ante__badge .t-label {
+  color: var(--ivory-200);
+}
+
+.side-ante__num {
+  font-size: var(--fs-2xl);
+  line-height: 0.8;
+  color: var(--ivory-50);
+  text-shadow: 0 var(--px) 0 var(--rouge-700);
+}
+
+.side-ante__facts {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s2);
+  flex: 1;
+  margin: 0;
+}
+
+.side-ante__facts > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.side-ante__facts dd {
+  margin: 0;
+  font-size: var(--fs-lg);
+  line-height: 1;
+  color: var(--ivory-50);
+}
+
+.side-score {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3) var(--s4) var(--s4);
+  background: var(--ebony-950);
+  box-shadow: inset 0 0 0 2px var(--ebony-700);
+}
+
+.side-score__target {
+  display: none;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  color: var(--ivory-400);
+}
+
+.side-score__value {
+  font-size: 56px;
+  line-height: 0.85;
+  color: var(--ivory-50);
+  text-shadow: 0 var(--px) 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Le calcul de la main : jetons en bleu, multiplicateur en rouge. */
+.side-hand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s3) var(--s3) var(--s4);
+  background: var(--ebony-950);
+  box-shadow: inset 0 0 0 2px var(--ebony-700);
+}
+
+.side-hand.is-live {
+  box-shadow:
+    inset 0 0 0 2px var(--brass-600),
+    0 0 24px rgba(244, 181, 59, 0.18);
+}
+
+.side-hand__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  min-height: 28px;
+  padding: 0 var(--s1);
+}
+
+.side-hand__label {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  line-height: 1;
+  color: var(--ivory-50);
+}
+
+.side-hand.is-empty .side-hand__label {
+  color: var(--ivory-500);
+}
+
+.calc {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.calc__box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 58px;
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--ivory-50);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 var(--px) 0 rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.calc__box > span {
+  display: inline-block;
+}
+
+.calc__box--chips {
+  background: var(--chips-500);
+  box-shadow:
+    var(--outline),
+    inset 0 var(--px) 0 var(--chips-300),
+    inset 0 calc(var(--px) * -1) 0 var(--chips-700);
+}
+
+.calc__box--mult {
+  background: var(--mult-500);
+  box-shadow:
+    var(--outline),
+    inset 0 var(--px) 0 var(--mult-300),
+    inset 0 calc(var(--px) * -1) 0 var(--mult-700);
+}
+
+.side-hand.is-empty .calc__box {
+  filter: saturate(0.35) brightness(0.55);
+}
+
+.calc__x {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  line-height: 1;
+  color: var(--ivory-300);
+}
+
+.side-hand__total {
+  display: grid;
+  place-items: center;
+  min-height: 40px;
+}
+
+.side-hand__result {
+  font-size: var(--fs-2xl);
+  line-height: 0.85;
+  color: var(--brass-300);
+  text-shadow:
+    0 var(--px) 0 var(--brass-700),
+    0 0 18px rgba(255, 205, 87, 0.45);
+  animation: slam 420ms var(--ease-out);
+}
+
+@keyframes slam {
+  0% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.side-counters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+}
+
+.side-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--s2) 0 var(--s3);
+  background: var(--ebony-950);
+  box-shadow: inset 0 0 0 2px var(--ebony-700);
+}
+
+.side-counter__num {
+  font-size: var(--fs-2xl);
+  line-height: 0.85;
+}
+
+.side-counter--hands .side-counter__num {
+  color: var(--chips-500);
+}
+
+.side-counter--discards .side-counter__num {
+  color: var(--mult-500);
+}
+
+.side-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.item-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3) calc(var(--s2) + 2px);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ivory-100);
+  background: var(--ebony-700);
+  box-shadow:
+    var(--outline),
+    inset 0 var(--px) 0 rgba(255, 230, 190, 0.08),
+    inset 0 calc(var(--px) * -1) 0 var(--ebony-900);
+  transition:
+    transform var(--t-press) var(--ease-out),
+    background-color var(--t-fast) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .item-btn:hover:not(:disabled) {
+    background: var(--ebony-600);
+  }
+}
+
+.item-btn:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.item-btn:disabled {
+  color: var(--ivory-500);
+  background: var(--ebony-800);
+  cursor: not-allowed;
+}
+
+.item-btn__short {
+  display: none;
+}
+
+.item-btn__meta {
+  color: var(--brass-400);
+}
+
+.item-btn.is-armed {
+  color: var(--ebony-950);
+  background: var(--brass-400);
+  box-shadow:
+    var(--outline),
+    inset 0 calc(var(--px) * -1) 0 var(--brass-700);
+}
+
+.item-btn.is-armed .item-btn__meta {
+  color: var(--ebony-950);
+}
+
+.side-quit {
+  align-self: center;
+  margin-top: auto;
+}
+
+/* ------------------------------------------------------------- la table */
+
+.poker-table {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: clamp(8px, 2cqh, 16px);
+  min-height: 0;
+  padding: clamp(16px, 3cqh, 24px) var(--s6) clamp(14px, 2.4cqh, 20px);
+  background:
+    radial-gradient(70% 60% at 50% 40%, rgba(58, 165, 119, 0.35), transparent 70%),
+    radial-gradient(120% 100% at 50% 30%, var(--felt-600), var(--felt-800) 60%, var(--felt-900));
+  box-shadow:
+    var(--outline),
+    inset 0 0 0 10px var(--ebony-800),
+    inset 0 0 0 12px var(--brass-700),
+    inset 0 0 0 13px rgba(0, 0, 0, 0.5),
+    inset 0 0 80px rgba(0, 0, 0, 0.45),
+    0 calc(var(--px) * 3) 0 calc(var(--px) * -1) rgba(0, 0, 0, 0.45);
+}
+
+.joker-rail {
+  display: flex;
+  justify-content: center;
+  gap: var(--s3);
+  padding-top: var(--s1);
+}
+
+.joker-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--joker-w);
+  height: var(--joker-h);
+}
+
+.poker-table .joker--sm .joker__card {
+  width: var(--joker-w);
+  height: var(--joker-h);
+  padding: calc(var(--joker-h) * 0.11) 5px calc(var(--joker-h) * 0.07);
+}
+
+.poker-table .joker--sm .joker__art {
+  width: calc(var(--joker-h) * 0.42);
+  height: calc(var(--joker-h) * 0.42);
+}
+
+.poker-table .joker--sm .joker__art svg {
+  width: calc(var(--joker-h) * 0.27);
+  height: calc(var(--joker-h) * 0.27);
+}
+
+.joker-slot--empty {
+  box-shadow: inset 0 0 0 2px rgba(244, 181, 59, 0.18);
+  background: repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.12) 0 6px, transparent 6px 12px);
+}
+
+.joker-slot__hint {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(244, 181, 59, 0.45);
+}
+
+.play-zone {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: calc(var(--hand-card-h) + 20px);
+}
+
+.play-zone__hint {
+  position: absolute;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgba(255, 205, 87, 0.38);
+  padding: 0 var(--s4);
+}
+
+.play-zone__cards {
+  display: flex;
+  gap: var(--s3);
+  justify-content: center;
+}
+
+.play-slot {
+  position: relative;
+}
+
+.play-zone__total {
+  position: absolute;
+  right: var(--s4);
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  line-height: 1;
+  color: var(--brass-300);
+  text-shadow:
+    0 var(--px) 0 var(--brass-700),
+    0 calc(var(--px) * 2) 0 var(--brass-800),
+    0 calc(var(--px) * 3) 0 rgba(0, 0, 0, 0.6),
+    0 0 30px rgba(255, 205, 87, 0.4);
+}
+
+.play-zone__total > span {
+  display: inline-block;
+  animation: slam 460ms var(--ease-out);
+}
+
+/* L'eventail : chaque carte pivote autour de son pied, courbe en arc. */
+.hand-zone {
+  display: grid;
+  place-items: end center;
+  /* Place pour la carte, sa levee quand elle est choisie et la courbe de l'eventail. */
+  min-height: calc(var(--hand-card-h) + 44px);
+  padding-top: 28px;
+}
+
+.hand-fan {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 0 var(--s4);
+}
+
+.fan-slot {
+  position: relative;
+  margin-left: calc(var(--hand-card-w) * -0.12);
+}
+
+.fan-slot:first-child {
+  margin-left: 0;
+}
+
+.fan-pose {
+  position: relative;
+  transform: translateY(calc(var(--fan-o2) * var(--fan-curve)))
+    rotate(calc(var(--fan-o) * var(--fan-step)));
+  transform-origin: 50% 120%;
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+/* Petit balancement au repos : la main respire, rien de plus. */
+.fan-pose > .card {
+  animation: card-idle 3.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.45s);
+}
+
+.fan-pose > .card.card--selected {
+  animation: none;
+}
+
+@keyframes card-idle {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -3px;
+  }
+}
+
+.fan-key {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  color: rgba(255, 240, 200, 0.35);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fan-key {
+    display: block;
+  }
+}
+
+.poker-actions {
+  display: grid;
+  grid-template-columns: 1.4fr auto 1fr auto;
+  align-items: center;
+  gap: var(--s4);
+  padding-top: var(--s4);
+}
+
+.sort-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.sort-toggle .t-label {
+  color: rgba(255, 240, 200, 0.55);
+}
+
+.sort-toggle__btn {
+  min-width: 84px;
+  padding: 2px var(--s3) 4px;
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ivory-200);
+  background: rgba(5, 26, 21, 0.75);
+  box-shadow: inset 0 0 0 2px rgba(244, 181, 59, 0.25);
+  transition:
+    color var(--t-fast) ease,
+    background-color var(--t-fast) ease;
+}
+
+.sort-toggle__btn.is-on {
+  color: var(--ebony-950);
+  background: var(--brass-400);
+  box-shadow: inset 0 -2px 0 var(--brass-700);
+}
+
+.deck-pile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.deck-pile__stack {
+  position: relative;
+  width: 42px;
+  height: 58px;
+}
+
+.deck-pile__stack > span {
+  position: absolute;
+  inset: 0;
+  background-color: var(--rouge-600);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255, 205, 87, 0.5) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(-45deg, rgba(255, 205, 87, 0.5) 0 2px, transparent 2px 7px);
+  box-shadow:
+    0 0 0 2px #1a120d,
+    inset 0 0 0 3px var(--rouge-600),
+    inset 0 0 0 4px var(--brass-500);
+}
+
+.deck-pile__stack > span:nth-child(1) {
+  transform: translate(4px, 4px);
+  filter: brightness(0.6);
+}
+
+.deck-pile__stack > span:nth-child(2) {
+  transform: translate(2px, 2px);
+  filter: brightness(0.8);
+}
+
+.deck-pile__count {
+  font-size: var(--fs-lg);
+  color: var(--ivory-100);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Bulles de score au-dessus des cartes et des jokers. */
+.bubble {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  z-index: 10;
+  padding: 1px 8px 4px;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  line-height: 1;
+  color: var(--ivory-50);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--outline);
+  animation: float-up 1100ms var(--ease-out) forwards;
+}
+
+.bubble--chips {
+  background: var(--chips-500);
+}
+
+.bubble--mult {
+  background: var(--mult-500);
+}
+
+.bubble--xmult {
+  background: var(--mult-500);
+  box-shadow:
+    var(--outline),
+    inset 0 0 0 2px var(--brass-300);
+}
+
+/* ==========================================================================
+   Jokers : cartes de tarot sombres, cadre a la couleur de la rarete
+   ========================================================================== */
+
+.joker {
+  --jk-frame: var(--felt-400);
+  --jk-deep: var(--felt-800);
+  position: relative;
+  display: inline-block;
+  outline-offset: 6px;
+}
+
+.joker--rare {
+  --jk-frame: var(--chips-500);
+  --jk-deep: #0f2d57;
+}
+
+.joker--legendaire {
+  --jk-frame: var(--brass-400);
+  --jk-deep: #4a2c07;
+}
+
+.joker__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 96px;
+  height: 132px;
+  padding: 14px 6px 10px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 38%, var(--jk-deep), var(--ebony-900) 72%);
+  box-shadow:
+    0 -2px 0 0 #1a120d,
+    0 2px 0 0 #1a120d,
+    -2px 0 0 0 #1a120d,
+    2px 0 0 0 #1a120d,
+    inset 0 0 0 3px var(--jk-frame),
+    inset 0 0 0 5px var(--ebony-900),
+    inset 0 0 0 6px var(--jk-frame),
+    4px 6px 0 0 rgba(2, 8, 6, 0.4);
+}
+
+.joker--sm .joker__card {
+  width: 80px;
+  height: 108px;
+  padding: 12px 5px 8px;
+}
+
+.joker__art {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin-top: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+  transform: rotate(45deg);
+}
+
+.joker--sm .joker__art {
+  width: 46px;
+  height: 46px;
+}
+
+.joker__art > svg {
+  transform: rotate(-45deg);
+}
+
+.joker__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  line-height: 0.9;
+  text-align: center;
+  color: var(--ivory-50);
+  text-wrap: balance;
+}
+
+.joker--sm .joker__name {
+  font-size: var(--fs-xs);
+}
+
+/* Le legendaire accroche la lumiere : un reflet passe lentement. */
+.joker--legendaire .joker__card::after {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(
+    115deg,
+    transparent 40%,
+    rgba(255, 240, 190, 0.28) 50%,
+    transparent 60%
+  );
+  animation: sheen 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes sheen {
+  0% {
+    transform: translateX(-60%);
+  }
+  55%,
+  100% {
+    transform: translateX(60%);
+  }
+}
+
+.joker__card--pulse {
+  animation: joker-pulse 420ms var(--ease-out);
+}
+
+@keyframes joker-pulse {
+  0% {
+    scale: 1;
+    rotate: 0deg;
+  }
+  30% {
+    scale: 1.14;
+    rotate: -4deg;
+  }
+  60% {
+    rotate: 3deg;
+  }
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+.joker__tip {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 12px);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 230px;
+  padding: var(--s3);
+  text-align: left;
+  background: var(--ebony-950);
+  box-shadow:
+    var(--outline),
+    inset 0 0 0 2px var(--jk-frame);
+  opacity: 0;
+  transform: translate(-50%, -4px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms var(--ease-out);
+  pointer-events: none;
+}
+
+.joker:hover .joker__tip,
+.joker:focus-visible .joker__tip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.joker__tip-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  color: var(--ivory-50);
+}
+
+.joker__tip-rarity {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--jk-frame);
+}
+
+.joker__tip-desc {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: 1.2;
+  color: var(--ivory-300);
+}
+
+/* ==========================================================================
+   Accueil, echec et boutique de manche
+   ========================================================================== */
+
+.poker-intro {
+  display: grid;
+  place-items: center;
+  padding-top: var(--s10);
+}
+
+.poker-intro__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  width: min(640px, 100%);
+  padding: var(--s8);
+}
+
+.poker-intro__panel--fail {
+  align-items: center;
+  text-align: center;
+}
+
+.poker-intro__title {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 8vw, 72px);
+  line-height: 0.9;
+  color: var(--brass-300);
+  text-shadow:
+    0 var(--px) 0 var(--brass-700),
+    0 calc(var(--px) * 2) 0 var(--brass-800),
+    0 calc(var(--px) * 3) 0 rgba(0, 0, 0, 0.6);
+  padding-bottom: 6px;
+}
+
+.poker-intro__lead {
+  color: var(--ivory-300);
+}
+
+.plaques {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s3);
+}
+
+.plaque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  padding: var(--s3) var(--s4) var(--s4);
+  background: var(--ebony-950);
+  box-shadow: inset 0 0 0 2px var(--ebony-700);
+}
+
+.plaque__value {
+  font-size: var(--fs-xl);
+  line-height: 0.9;
+  color: var(--ivory-50);
+}
+
+.formula {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  padding: var(--s2) 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.formula__chips,
+.formula__mult,
+.formula__score {
+  padding: 2px var(--s3) 5px;
+  color: var(--ivory-50);
+  box-shadow: var(--outline);
+}
+
+.formula__chips {
+  background: var(--chips-500);
+}
+
+.formula__mult {
+  background: var(--mult-500);
+}
+
+.formula__score {
+  color: var(--ebony-950);
+  background: var(--brass-400);
+}
+
+.formula__x,
+.formula__eq {
+  color: var(--ivory-400);
+}
+
+.poker-shop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+}
+
+.poker-shop__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s5);
+  flex-wrap: wrap;
+}
+
+.poker-shop__title {
+  margin: var(--s1) 0 var(--s2);
+  font-family: var(--font-display);
+  font-size: clamp(44px, 7vw, 68px);
+  line-height: 0.9;
+  color: var(--brass-300);
+  text-shadow:
+    0 var(--px) 0 var(--brass-700),
+    0 calc(var(--px) * 2) 0 var(--brass-800),
+    0 calc(var(--px) * 3) 0 rgba(0, 0, 0, 0.6);
+  padding-bottom: 6px;
+}
+
+.poker-shop__cta {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+}
+
+.shop-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.engraved__count {
+  order: 2;
+  font-size: var(--fs-sm);
+  color: var(--ivory-400);
+  letter-spacing: 0.04em;
+}
+
+.shop-jokers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--s4);
+}
+
+.shop-joker {
+  display: flex;
+  gap: var(--s4);
+  padding: var(--s4);
+  background: rgba(11, 8, 6, 0.72);
+  box-shadow: var(--outline);
+}
+
+.shop-joker__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+  flex: 1;
+}
+
+.shop-owned {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  flex-wrap: wrap;
+}
+
+.shop-owned__row {
+  display: flex;
+  gap: var(--s3);
+  flex-wrap: wrap;
+}
+
+.levels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px var(--s4);
+  background: rgba(11, 8, 6, 0.72);
+  box-shadow: var(--outline);
+  padding: var(--s2) var(--s4);
+}
+
+.levels__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 90px 64px auto;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) 0;
+  box-shadow: 0 2px 0 var(--ebony-800);
+}
+
+.levels__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  color: var(--ivory-50);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.levels__calc {
+  font-size: var(--fs-md);
+  text-align: right;
+}
+
+.levels__gain {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  text-align: right;
+}
+
+/* ---------------------------------------------------------- responsive */
+
+/* Sur les ecrans tres bas, l'aide imprimee sur le feutre cede sa place aux cartes. */
+@media (max-height: 700px) {
+  .play-zone__hint {
+    display: none;
+  }
+}
+
+/* Ecrans bas (portables 13 pouces) : la colonne de score se resserre. */
+@media (min-width: 901px) and (max-height: 820px) {
+  .poker-side {
+    gap: var(--s2);
+    padding: var(--s3);
+  }
+
+  .side-ante__badge {
+    width: 64px;
+    padding: 4px 0 6px;
+  }
+
+  .side-ante__num {
+    font-size: var(--fs-xl);
+  }
+
+  .side-score {
+    gap: 4px;
+    padding: var(--s2) var(--s3) var(--s3);
+  }
+
+  .side-score__value {
+    font-size: var(--fs-2xl);
+  }
+
+  .side-hand {
+    gap: var(--s2);
+    padding: var(--s2) var(--s2) var(--s3);
+  }
+
+  .calc__box {
+    height: 46px;
+    font-size: var(--fs-xl);
+  }
+
+  .side-hand__total {
+    min-height: 30px;
+  }
+
+  .side-hand__result {
+    font-size: var(--fs-xl);
+  }
+
+  .side-counter {
+    padding: 4px 0 6px;
+  }
+
+  .side-counter__num {
+    font-size: var(--fs-xl);
+  }
+
+  .item-btn {
+    padding-block: 6px 8px;
+  }
+
+  .side-quit {
+    padding-block: 2px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .poker {
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: var(--s4);
+  }
+
+  .levels {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablette et telephone : la colonne de score devient un bandeau compact
+   au-dessus de la table, sur trois lignes courtes. */
+@media (max-width: 900px) {
+  .poker {
+    /* La main doit tenir en largeur : huit cartes qui se chevauchent. */
+    --hand-card-h: min(clamp(62px, 11.5cqh, 112px), calc((100cqw - 56px) / 4.1));
+    --joker-h: clamp(54px, 9cqh, 96px);
+    --fan-step: 1.4deg;
+    --fan-curve: 0.9px;
+
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--s2);
+  }
+
+  .poker-side {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'ante score counters'
+      'hand hand hand'
+      'items items quit';
+    gap: var(--s2);
+    padding: var(--s2);
+  }
+
+  .side-ante {
+    grid-area: ante;
+  }
+
+  .side-ante__facts {
+    display: none;
+  }
+
+  .side-ante__badge {
+    width: 52px;
+    padding: 2px 0 5px;
+  }
+
+  .side-ante__num {
+    font-size: var(--fs-xl);
+  }
+
+  .side-score {
+    grid-area: score;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px var(--s3) var(--s2);
+  }
+
+  .side-score > .t-label {
+    display: none;
+  }
+
+  .side-score__value {
+    font-size: var(--fs-xl);
+  }
+
+  .side-score__target {
+    display: inline;
+  }
+
+  .side-score .meter {
+    height: 16px;
+  }
+
+  .side-score .meter__label {
+    font-size: var(--fs-xs);
+  }
+
+  .side-counters {
+    grid-area: counters;
+    gap: 6px;
+  }
+
+  .side-counter {
+    min-width: 54px;
+    padding: 4px var(--s2) 6px;
+  }
+
+  .side-counter__num {
+    font-size: var(--fs-xl);
+  }
+
+  .side-counter .t-label {
+    font-size: 12px;
+  }
+
+  /* Le calcul tient sur une ligne : nom de la main, jetons x mult, total. */
+  .side-hand {
+    grid-area: hand;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--s2);
+    padding: 6px var(--s2);
+  }
+
+  .side-hand__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .side-hand__label {
+    font-size: var(--fs-md);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .calc {
+    grid-template-columns: 64px auto 64px;
+    gap: 4px;
+  }
+
+  .calc__box {
+    height: 38px;
+    font-size: var(--fs-lg);
+  }
+
+  .calc__x {
+    font-size: var(--fs-md);
+  }
+
+  .side-hand__total {
+    min-width: 56px;
+    min-height: 0;
+  }
+
+  .side-hand__total .t-muted {
+    display: none;
+  }
+
+  .side-hand__result {
+    font-size: var(--fs-xl);
+  }
+
+  .side-items {
+    grid-area: items;
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .side-items .item-btn {
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+    padding: 4px 6px 6px;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .side-quit__more,
+  .item-btn__long {
+    display: none;
+  }
+
+  .item-btn__short {
+    display: inline;
+  }
+
+  .side-items .item-btn {
+    overflow: hidden;
+  }
+
+  .side-quit {
+    grid-area: quit;
+    margin: 0;
+    padding: 0 var(--s1);
+    font-size: var(--fs-xs);
+  }
+
+  .poker-table {
+    gap: var(--s2);
+    padding: var(--s4) var(--s3) var(--s3);
+    box-shadow:
+      var(--outline),
+      inset 0 0 0 6px var(--ebony-800),
+      inset 0 0 0 8px var(--brass-700),
+      inset 0 0 60px rgba(0, 0, 0, 0.45);
+  }
+
+  .joker-rail {
+    gap: 6px;
+    padding-top: 0;
+  }
+
+  .joker-slot__hint {
+    font-size: 12px;
+  }
+
+  .poker-table .joker--sm .joker__name {
+    font-size: 12px;
+  }
+
+  .play-zone__cards {
+    gap: 4px;
+  }
+
+  .play-zone__hint {
+    font-size: var(--fs-sm);
+  }
+
+  /* Sur petit ecran, le total tombe au-dessus des cartes jouees. */
+  .play-zone__total {
+    top: 0;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: var(--fs-2xl);
+  }
+
+  .hand-fan {
+    padding: 0;
+  }
+
+  .fan-slot {
+    margin-left: calc(var(--hand-card-w) * -0.32);
+  }
+
+  .hand-zone {
+    padding-top: 24px;
+    min-height: calc(var(--hand-card-h) + 34px);
+  }
+
+  .poker-actions {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: var(--s2);
+    padding-top: var(--s1);
+  }
+
+  .poker-actions .kbd {
+    display: none;
+  }
+
+  .poker-actions .btn--lg {
+    min-height: 48px;
+    padding-inline: var(--s2);
+    font-size: var(--fs-sm);
+  }
+
+  .poker-actions__play {
+    grid-column: 1;
+  }
+
+  .poker-actions__discard {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .sort-toggle {
+    grid-column: 1;
+    grid-row: 2;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 4px;
+  }
+
+  .sort-toggle .t-label {
+    margin-right: 4px;
+  }
+
+  .sort-toggle__btn {
+    min-width: 0;
+    padding: 4px var(--s3) 6px;
+  }
+
+  .deck-pile {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    gap: 6px;
+  }
+
+  .deck-pile__stack {
+    width: 28px;
+    height: 40px;
+  }
+
+  .deck-pile__count {
+    font-size: var(--fs-md);
+  }
+}
+
+@media (max-width: 640px) {
+  .poker-intro__panel {
+    padding: var(--s5);
+  }
+
+  .plaques {
+    grid-template-columns: 1fr;
+  }
+
+  .levels__row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .levels__calc,
+  .levels__gain {
+    display: none;
+  }
+
+  .shop-jokers {
+    grid-template-columns: 1fr;
+  }
+}

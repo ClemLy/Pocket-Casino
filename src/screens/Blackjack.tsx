@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type Card, createShoe } from '../engine/cards';
 import {
   canSplit,
@@ -14,7 +14,8 @@ import { appRng } from '../engine/appRng';
 import { useCasino } from '../store/useCasino';
 import { useJuice, useRoundActive } from '../store/useJuice';
 import { sfxButton, sfxCardDeal, sfxCardFlip, sfxChip, sfxLose, sfxWin } from '../audio/sfx';
-import { Chip, CHIP_VALUES } from '../components/Chip';
+import { Chip, ChipStack, CHIP_VALUES } from '../components/Chip';
+import { Counter } from '../components/Counter';
 import { PlayingCard } from '../components/PlayingCard';
 import { RoundEnd } from '../components/RoundEnd';
 import { Sprite } from '../components/Sprite';
@@ -126,11 +127,11 @@ export function Blackjack({ onOpenShop }: BlackjackProps) {
         const label = finalHands.length > 1 ? `Main ${index + 1} : ` : '';
         const value = handValue(hand.cards).total;
         lines.push(
-          `${label}${value} contre ${handValue(finalDealer).total} - ${
+          `${label}${value} contre ${handValue(finalDealer).total} : ${
             outcome.outcome === 'blackjack'
-              ? 'Blackjack'
+              ? 'blackjack'
               : outcome.outcome === 'win'
-                ? 'gagne'
+                ? 'gagné'
                 : outcome.outcome === 'push'
                   ? 'égalité'
                   : 'perdu'
@@ -146,7 +147,7 @@ export function Blackjack({ onOpenShop }: BlackjackProps) {
       if (isBlackjack(finalDealer) && inventory.shield > 0 && consumeItem('shield')) {
         const refund = Math.floor(finalHands[0].bet * 0.5);
         total += refund;
-        lines.push(`Insurance Shield : ${formatMoney(refund)} rembourses`);
+        lines.push(`Insurance Shield : ${formatMoney(refund)} remboursés`);
       }
 
       if (sideBet) {
@@ -159,8 +160,8 @@ export function Blackjack({ onOpenShop }: BlackjackProps) {
 
       setResult({
         amount: total,
-        title: total > 0 ? 'MANCHE REMPORTEE' : 'MANCHE PERDUE',
-        detail: lines.join(' | '),
+        title: total > 0 ? 'La table paye' : 'La maison gagne',
+        detail: lines.join(' · '),
       });
       setPhase('fin');
     },
@@ -324,211 +325,323 @@ export function Blackjack({ onOpenShop }: BlackjackProps) {
     [dealer, holeRevealed, peeked],
   );
 
+  /* -------------------------------------------------------------- clavier */
+
+  const keyHandler = useRef<(event: KeyboardEvent) => void>(() => undefined);
+  keyHandler.current = (event: KeyboardEvent) => {
+    if (event.metaKey || event.ctrlKey || event.altKey || result) return;
+    if (event.target instanceof HTMLElement && event.target.closest('input, textarea')) return;
+    const key = event.key.toLowerCase();
+    if (phase === 'mise' && key === 'enter') {
+      startRound();
+      event.preventDefault();
+      return;
+    }
+    if (phase !== 'joueur' || !activeHand || bustPending) return;
+    if (key === 't') hit();
+    else if (key === 'r') stand();
+    else if (key === 'd' && activeHand.cards.length === 2 && bank >= activeHand.bet) double();
+    else if (
+      key === 's' &&
+      canSplit(activeHand.cards) &&
+      hands.length < 4 &&
+      bank >= activeHand.bet
+    )
+      split();
+  };
+
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => keyHandler.current(event);
+    window.addEventListener('keydown', listener);
+    return () => window.removeEventListener('keydown', listener);
+  }, []);
+
+  const dealerLabel =
+    dealer.length === 0
+      ? null
+      : holeRevealed || peeked
+        ? String(dealerTotal)
+        : `${dealerTotal} + ?`;
+  const dealerBust = holeRevealed && handValue(dealer).busted;
+
   return (
-    <div className="shell col" style={{ gap: 'var(--u4)' }}>
-      <div className="table-felt col" style={{ gap: 'var(--u5)' }}>
-        {/* Croupier */}
-        <div className="seat">
-          <span className="seat__label">CROUPIER</span>
-          <div className="hand hand--tight">
-            {dealer.length === 0 ? (
-              <p className="t-body t-muted">Table libre.</p>
-            ) : (
-              dealer.map((card, i) => (
-                <PlayingCard
-                  key={`${card.id}-${i === 1 && !holeRevealed && !peeked ? 'down' : 'up'}`}
-                  card={card}
-                  faceDown={i === 1 && !holeRevealed && !peeked}
-                  dealing
-                  dealDelay={i * 70}
-                  dimmed={i === 1 && !holeRevealed && peeked}
-                />
-              ))
-            )}
-          </div>
-          {dealer.length > 0 ? (
-            <span className="led" style={{ fontSize: 20 }}>
-              {holeRevealed || peeked ? dealerTotal : `${dealerTotal} + ?`}
-            </span>
-          ) : null}
+    <div className="game bj">
+      <section className="bj-table" aria-label="Table de blackjack">
+        <div className="bj-shoe" aria-hidden="true">
+          <span className="bj-shoe__box">
+            <span className="bj-shoe__card" />
+          </span>
+          <span className="bj-shoe__label">Sabot</span>
         </div>
 
-        <div className="bj-divider" aria-hidden="true" />
+        <div className="bj-seat bj-seat--dealer">
+          <span className="seat-label">Croupier</span>
+          <div className="bj-row">
+            <div className="bj-cards">
+              {dealer.map((card, i) => {
+                const hidden = i === 1 && !holeRevealed && !peeked;
+                return (
+                  <PlayingCard
+                    key={card.id}
+                    card={card}
+                    faceDown={hidden}
+                    dealing
+                    dealDelay={i === 0 ? 70 : i === 1 ? 210 : 0}
+                    flipIn
+                    flipDelay={(i === 0 ? 70 : i === 1 ? 210 : 0) + 260}
+                    dimmed={i === 1 && !holeRevealed && peeked}
+                  />
+                );
+              })}
+            </div>
+            {dealerLabel ? (
+              <span className={`total-pill${dealerBust ? ' total-pill--bust' : ''}`}>
+                {dealerBust ? `${dealerTotal} sauté` : dealerLabel}
+              </span>
+            ) : null}
+          </div>
+        </div>
 
-        {/* Joueur */}
-        <div className="bj-hands">
+        <svg
+          className="bj-print"
+          viewBox="0 0 800 220"
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true"
+        >
+          <defs>
+            <path id="bj-arc-main" d="M 90 40 Q 400 210 710 40" />
+            <path id="bj-arc-sub" d="M 150 78 Q 400 222 650 78" />
+          </defs>
+          <text className="bj-print__main">
+            <textPath href="#bj-arc-main" startOffset="50%" textAnchor="middle">
+              Le blackjack paye 3 pour 2
+            </textPath>
+          </text>
+          <text className="bj-print__sub">
+            <textPath href="#bj-arc-sub" startOffset="50%" textAnchor="middle">
+              Le croupier tire jusqu’à 16 et reste à 17
+            </textPath>
+          </text>
+        </svg>
+
+        <div className="bj-seat bj-seat--player">
           {hands.length === 0 ? (
-            <div className="seat">
-              <span className="seat__label">TOI</span>
-              <p className="t-body t-muted">Pose ta mise pour lancer la distribution.</p>
+            <div className="bj-hand">
+              <div className="bet-spot">
+                {bet > 0 ? <ChipStack amount={bet} size="md" /> : null}
+                <span className="bet-spot__ring" aria-hidden="true" />
+              </div>
+              <div className={`side-spot${sideBet ? ' is-on' : ''}`}>
+                {sideBet ? <ChipStack amount={SIDE_BET} size="xs" /> : null}
+                <span className="side-spot__label">PP</span>
+              </div>
             </div>
           ) : (
-            hands.map((hand, index) => {
-              const value = handValue(hand.cards);
-              const isActive = index === active && phase === 'joueur';
-              return (
-                <div key={index} className={`seat bj-seat${isActive ? ' bj-seat--active' : ''}`}>
-                  <span className="seat__label">
-                    {hands.length > 1 ? `MAIN ${index + 1}` : 'TOI'}
-                    {hand.doubled ? ' - DOUBLEE' : ''}
-                  </span>
-                  <div className="hand hand--tight">
-                    {hand.cards.map((card, i) => (
-                      <PlayingCard key={card.id} card={card} dealing dealDelay={i * 70} />
-                    ))}
-                  </div>
-                  <span
-                    className={`led${value.busted ? ' led--red' : isBlackjack(hand.cards) ? ' led--green' : ''}`}
-                    style={{ fontSize: 20 }}
+            <div className="bj-hands">
+              {hands.map((hand, index) => {
+                const value = handValue(hand.cards);
+                const isActive = index === active && phase === 'joueur';
+                const natural = isBlackjack(hand.cards);
+                return (
+                  <div
+                    key={index}
+                    className={`bj-hand${isActive ? ' is-active' : ''}${value.busted ? ' is-bust' : ''}`}
                   >
-                    {value.busted
-                      ? `${value.total} SAUTE`
-                      : value.soft
-                        ? `${value.total} souple`
-                        : value.total}
-                  </span>
-                  <span className="badge">MISE {formatMoney(hand.bet)}</span>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {sideBetResult ? <p className="t-body t-brass center">{sideBetResult}</p> : null}
-      </div>
-
-      {/* Barre d'actions */}
-      {phase === 'mise' ? (
-        <div className="panel col">
-          <h2 className="panel__title">TA MISE</h2>
-          <div className="row row--between row--wrap">
-            <div className="chip-rack">
-              {CHIP_VALUES.map((value) => (
-                <Chip
-                  key={value}
-                  value={value}
-                  disabled={bank < bet + value}
-                  onClick={() => setBet((b) => b + value)}
-                />
-              ))}
+                    <span className="seat-label">
+                      {hands.length > 1 ? `Main ${index + 1}` : 'Toi'}
+                      {hand.doubled ? ' · doublée' : ''}
+                    </span>
+                    <div className="bj-row">
+                      <div className="bj-cards">
+                        {hand.cards.map((card, i) => (
+                          <PlayingCard
+                            key={card.id}
+                            card={card}
+                            dealing
+                            dealDelay={i < 2 && hands.length === 1 ? i * 280 : 0}
+                            flipIn
+                            flipDelay={(i < 2 && hands.length === 1 ? i * 280 : 0) + 260}
+                          />
+                        ))}
+                      </div>
+                      <span
+                        className={`total-pill${value.busted ? ' total-pill--bust' : natural ? ' total-pill--bj' : ''}`}
+                      >
+                        {value.busted
+                          ? `${value.total} sauté`
+                          : natural
+                            ? 'Blackjack'
+                            : value.soft
+                              ? `${value.total} souple`
+                              : value.total}
+                      </span>
+                    </div>
+                    <div className="bet-spot bet-spot--small">
+                      <ChipStack amount={hand.bet} size="sm" />
+                      <span className="bet-spot__ring" aria-hidden="true" />
+                    </div>
+                    <span className="sr-only">Mise {formatMoney(hand.bet)}</span>
+                  </div>
+                );
+              })}
             </div>
-            <div className="row">
-              <span className="led" style={{ fontSize: 24, minWidth: 120, textAlign: 'right' }}>
-                {formatMoney(bet)}
+          )}
+          {sideBetResult ? <p className="bj-sidebet-result">{sideBetResult}</p> : null}
+        </div>
+      </section>
+
+      {/* Console du joueur : a droite sur grand ecran, collee en bas sur telephone. */}
+      <aside className="panel bj-console" aria-label="Commandes de la table">
+        {phase === 'mise' ? (
+          <div className="bj-controls bj-controls--bet">
+            <div className="bj-controls__bet">
+              <div className="chip-rack">
+                {CHIP_VALUES.map((value) => (
+                  <Chip
+                    key={value}
+                    value={value}
+                    size="lg"
+                    disabled={bank < bet + value}
+                    onClick={() => setBet((b) => b + value)}
+                  />
+                ))}
+              </div>
+              <div className="bj-controls__stake">
+                <span className="t-label">Ta mise</span>
+                <span className="led bj-controls__led">
+                  <Counter value={bet} money />
+                </span>
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() => {
+                    sfxButton();
+                    setBet(MIN_BET);
+                  }}
+                >
+                  Effacer
+                </button>
+              </div>
+            </div>
+
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={sideBet}
+                onChange={(event) => setSideBet(event.target.checked)}
+              />
+              <span className="toggle__track" aria-hidden="true">
+                <span className="toggle__thumb" />
               </span>
+              <span className="toggle__text">
+                <span className="toggle__title">Perfect Pairs · {formatMoney(SIDE_BET)}</span>
+                <span className="toggle__hint">Paire mixte x6, même couleur x12, parfaite x25</span>
+              </span>
+            </label>
+
+            <button
+              type="button"
+              className="btn btn--lg btn--wide"
+              disabled={!canDeal}
+              onClick={startRound}
+            >
+              {bank < totalStake
+                ? 'Banque insuffisante'
+                : `Distribuer (${formatMoney(totalStake)})`}
+              <span className="kbd">Entrée</span>
+            </button>
+          </div>
+        ) : null}
+
+        {phase === 'joueur' && activeHand && !bustPending ? (
+          <div className="bj-controls">
+            <div className="bj-actions">
+              <button type="button" className="btn btn--lg" onClick={hit}>
+                Tirer <span className="kbd">T</span>
+              </button>
+              <button type="button" className="btn btn--lg btn--felt" onClick={stand}>
+                Rester <span className="kbd">R</span>
+              </button>
               <button
                 type="button"
-                className="btn btn--ghost btn--sm"
-                onClick={() => setBet(MIN_BET)}
+                className="btn btn--lg btn--ghost"
+                onClick={double}
+                disabled={activeHand.cards.length !== 2 || bank < activeHand.bet}
               >
-                Effacer
+                Doubler <span className="kbd">D</span>
+              </button>
+              <button
+                type="button"
+                className="btn btn--lg btn--ghost"
+                onClick={split}
+                disabled={!canSplit(activeHand.cards) || hands.length >= 4 || bank < activeHand.bet}
+              >
+                Splitter <span className="kbd">S</span>
+              </button>
+            </div>
+
+            <div className="token-bar">
+              <span className="t-label">Jetons d&apos;avantage</span>
+              <div className="token-bar__row">
+                <TokenButton
+                  itemId="peek"
+                  count={inventory.peek}
+                  disabled={peeked}
+                  onUse={usePeek}
+                  onBuy={onOpenShop}
+                />
+                <TokenButton
+                  itemId="shield"
+                  count={inventory.shield}
+                  disabled
+                  hint="Se déclenche tout seul"
+                  onUse={() => undefined}
+                  onBuy={onOpenShop}
+                />
+                <TokenButton
+                  itemId="burn"
+                  count={inventory.burn}
+                  disabled
+                  hint="Si tu sautes"
+                  onUse={() => undefined}
+                  onBuy={onOpenShop}
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {bustPending && activeHand ? (
+          <div className="bj-controls bj-bust">
+            <h2 className="bj-bust__title">Tu as sauté à {handValue(activeHand.cards).total}</h2>
+            <p className="t-body">
+              Le jeton Burn annule ta dernière carte et te remet dans la manche. Il t&apos;en reste{' '}
+              {inventory.burn}.
+            </p>
+            <div className="bj-actions bj-actions--two">
+              <button type="button" className="btn btn--lg" onClick={useBurn}>
+                Brûler la dernière carte
+              </button>
+              <button type="button" className="btn btn--lg btn--danger" onClick={acceptBust}>
+                Encaisser le coup
               </button>
             </div>
           </div>
+        ) : null}
 
-          <label className="bj-sidebet">
-            <input
-              type="checkbox"
-              checked={sideBet}
-              onChange={(event) => setSideBet(event.target.checked)}
-            />
-            <span className="t-body">
-              Perfect Pairs pour {formatMoney(SIDE_BET)} : paire mixte x6, même couleur x12,
-              parfaite x25
-            </span>
-          </label>
-
-          <button
-            type="button"
-            className="btn btn--lg btn--wide"
-            disabled={!canDeal}
-            onClick={startRound}
-          >
-            {bank < totalStake ? 'Banque insuffisante' : `Distribuer (${formatMoney(totalStake)})`}
-          </button>
-        </div>
-      ) : null}
-
-      {phase === 'joueur' && activeHand && !bustPending ? (
-        <div className="panel col">
-          <div className="row row--wrap">
-            <button type="button" className="btn grow" onClick={hit}>
-              Tirer
-            </button>
-            <button type="button" className="btn btn--ghost grow" onClick={stand}>
-              Rester
-            </button>
-            <button
-              type="button"
-              className="btn btn--ghost grow"
-              onClick={double}
-              disabled={activeHand.cards.length !== 2 || bank < activeHand.bet}
-            >
-              Doubler
-            </button>
-            <button
-              type="button"
-              className="btn btn--ghost grow"
-              onClick={split}
-              disabled={!canSplit(activeHand.cards) || hands.length >= 4 || bank < activeHand.bet}
-            >
-              Splitter
-            </button>
+        {phase === 'croupier' || phase === 'fin' ? (
+          <div className="bj-controls bj-waiting">
+            <p className="bj-waiting__text">
+              {phase === 'croupier' ? 'Le croupier joue sa main' : 'Le croupier règle la table'}
+              <span className="dots" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+            </p>
           </div>
-
-          <div className="row row--wrap token-bar">
-            <TokenButton
-              itemId="peek"
-              count={inventory.peek}
-              disabled={peeked}
-              onUse={usePeek}
-              onBuy={onOpenShop}
-            />
-            <TokenButton
-              itemId="shield"
-              count={inventory.shield}
-              disabled
-              hint="Se déclenche tout seul"
-              onUse={() => undefined}
-              onBuy={onOpenShop}
-            />
-            <TokenButton
-              itemId="burn"
-              count={inventory.burn}
-              disabled
-              hint="Disponible si tu sautes"
-              onUse={() => undefined}
-              onBuy={onOpenShop}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {bustPending && activeHand ? (
-        <div className="panel col bj-bust">
-          <h2 className="panel__title t-perte">
-            TU AS SAUTE A {handValue(activeHand.cards).total}
-          </h2>
-          <p className="t-body">
-            Le jeton Burn annule ta dernière carte et te remet dans la manche. Il t&apos;en reste{' '}
-            {inventory.burn}.
-          </p>
-          <div className="row">
-            <button type="button" className="btn grow" onClick={useBurn}>
-              Bruler la dernière carte
-            </button>
-            <button type="button" className="btn btn--danger grow" onClick={acceptBust}>
-              Encaisser le coup
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {phase === 'croupier' ? (
-        <div className="panel center">
-          <p className="t-body t-muted blink">Le croupier joue sa main...</p>
-        </div>
-      ) : null}
+        ) : null}
+      </aside>
 
       {result ? (
         <RoundEnd
@@ -556,23 +669,33 @@ function TokenButton({ itemId, count, disabled, hint, onUse, onBuy }: TokenButto
   const item = ITEMS[itemId];
   if (count === 0) {
     return (
-      <button type="button" className="btn btn--ghost btn--sm grow" onClick={onBuy}>
-        <Sprite name="bag" size={14} />
-        {item.name} : acheter
+      <button type="button" className="token token--empty" onClick={onBuy}>
+        <span className="token__coin" aria-hidden="true">
+          <Sprite name="bag" size={20} />
+        </span>
+        <span className="token__text">
+          <span className="token__name">{item.name}</span>
+          <span className="token__meta">Acheter</span>
+        </span>
       </button>
     );
   }
   return (
     <button
       type="button"
-      className="btn btn--sm grow"
+      className={`token${disabled ? ' token--passive' : ''}`}
       onClick={onUse}
       disabled={disabled}
       title={hint ?? item.short}
     >
-      <Sprite name="chip" size={14} />
-      {item.name} x{count}
-      {hint ? ` - ${hint}` : ''}
+      <span className="token__coin" aria-hidden="true">
+        <Sprite name="chip" size={20} />
+        <span className="token__count num">{count}</span>
+      </span>
+      <span className="token__text">
+        <span className="token__name">{item.name}</span>
+        <span className="token__meta">{hint ?? 'Utiliser'}</span>
+      </span>
     </button>
   );
 }

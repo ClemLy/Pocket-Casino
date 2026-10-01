@@ -12,10 +12,10 @@ import { Sprite } from '../components/Sprite';
 export type RuleTab = 'poker' | 'blackjack' | 'roulette' | 'avantages';
 
 const TABS: ReadonlyArray<{ id: RuleTab; label: string }> = [
-  { id: 'poker', label: 'POKER' },
-  { id: 'blackjack', label: 'BLACKJACK' },
-  { id: 'roulette', label: 'ROULETTE' },
-  { id: 'avantages', label: 'TRICHE ET AVANTAGES' },
+  { id: 'poker', label: 'Poker' },
+  { id: 'blackjack', label: 'Blackjack' },
+  { id: 'roulette', label: 'Roulette' },
+  { id: 'avantages', label: 'Triche et avantages' },
 ];
 
 function card(rank: Rank, suit: Suit, tag = 'rb'): Card {
@@ -134,7 +134,7 @@ function PokerRules() {
   const [open, setOpen] = useState<string | null>('ROYAL_FLUSH');
 
   return (
-    <div className="col" style={{ gap: 'var(--u4)' }}>
+    <div className="col" style={{ gap: 'var(--s4)' }}>
       <p className="t-body">
         Le score d&apos;une main vaut <span className="score-line__chips">jetons</span>{' '}
         <span className="score-line__x">x</span>{' '}
@@ -144,7 +144,7 @@ function PokerRules() {
         comptent pas.
       </p>
 
-      <ul className="col" style={{ gap: 'var(--u2)' }}>
+      <ul className="col" style={{ gap: 'var(--s2)' }}>
         {HAND_ORDER.map((type) => {
           const def = HAND_TABLE[type];
           const base = handAtLevel(type, 1);
@@ -245,13 +245,13 @@ function BlackjackRules() {
   const rows = useMemo(buildRows, []);
 
   return (
-    <div className="col" style={{ gap: 'var(--u4)' }}>
+    <div className="col" style={{ gap: 'var(--s4)' }}>
       <p className="t-body">
         Le croupier tire jusqu&apos;à 16 et reste dès 17, y compris sur un 17 souple. Un blackjack
         naturel paye 3 pour 2, une victoire simple paye 1 pour 1, l&apos;égalité rembourse la mise.
       </p>
 
-      <div className="col" style={{ gap: 'var(--u2)' }}>
+      <div className="col" style={{ gap: 'var(--s2)' }}>
         <h3 className="t-label">Les coups spéciaux</h3>
         <p className="t-body t-muted">
           <span className="t-brass">Doubler</span> : uniquement sur tes deux premières cartes. Tu
@@ -303,7 +303,7 @@ function BlackjackRules() {
         </table>
       </div>
 
-      <div className="row row--wrap">
+      <div className="rules-legend">
         <span className="badge strat--hit">T Tirer</span>
         <span className="badge strat--stand">R Rester</span>
         <span className="badge strat--double">D Doubler</span>
@@ -317,11 +317,11 @@ function BlackjackRules() {
 
 function RouletteRules() {
   return (
-    <div className="col" style={{ gap: 'var(--u5)' }}>
+    <div className="col" style={{ gap: 'var(--s5)' }}>
       {(['europeenne', 'turbo'] as const).map((key) => {
         const wheel = WHEELS[key];
         return (
-          <section key={key} className="col" style={{ gap: 'var(--u2)' }}>
+          <section key={key} className="col" style={{ gap: 'var(--s2)' }}>
             <h3 className="t-label row">
               <Sprite name="wheel" size={18} />
               Roulette {wheel.label} : {wheel.order.length} cases
@@ -359,8 +359,8 @@ function RouletteRules() {
 
 function PerksRules() {
   return (
-    <div className="col" style={{ gap: 'var(--u5)' }}>
-      <section className="col" style={{ gap: 'var(--u3)' }}>
+    <div className="col" style={{ gap: 'var(--s5)' }}>
+      <section className="col" style={{ gap: 'var(--s3)' }}>
         <h3 className="t-label">Jetons spéciaux</h3>
         {ITEM_ORDER.map((id) => {
           const item = ITEMS[id];
@@ -376,7 +376,7 @@ function PerksRules() {
         })}
       </section>
 
-      <section className="col" style={{ gap: 'var(--u3)' }}>
+      <section className="col" style={{ gap: 'var(--s3)' }}>
         <h3 className="t-label">Jokers du mode poker</h3>
         <div className="tile-grid">
           {JOKERS.map((joker) => (
@@ -396,7 +396,7 @@ function PerksRules() {
         </div>
       </section>
 
-      <section className="col" style={{ gap: 'var(--u2)' }}>
+      <section className="col" style={{ gap: 'var(--s2)' }}>
         <h3 className="t-label">Quitte ou Double</h3>
         <p className="t-body t-muted">
           Après chaque manche gagnée, la totalité du retour de la manche peut être remise en jeu :
@@ -405,7 +405,7 @@ function PerksRules() {
         </p>
       </section>
 
-      <section className="col" style={{ gap: 'var(--u2)' }}>
+      <section className="col" style={{ gap: 'var(--s2)' }}>
         <h3 className="t-label">Quand la banque tombe à zéro</h3>
         <p className="t-body t-muted">
           La Roue de la Dernière Chance rend de 100 $ à 500 $, une fois toutes les 20 heures. La

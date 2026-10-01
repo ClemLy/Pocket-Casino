@@ -39,10 +39,13 @@ function toRuns(data: SpriteData, palette: Record<string, string>): Run[] {
 }
 
 export interface SpriteProps {
-  name: SpriteName;
-  /** Cote du rendu en pixels CSS. */
+  /** Picto du catalogue 16x16. Ignore si `data` est fourni. */
+  name?: SpriteName;
+  /** Grille brute, pour les dessins hors catalogue (portraits de figures). */
+  data?: SpriteData;
+  /** Cote du rendu en pixels CSS (le plus grand des deux cotes). */
   size?: number;
-  /** Surcharges de palette, par exemple `{ a: 'var(--crimson-500)' }`. */
+  /** Surcharges de palette, par exemple `{ a: 'var(--rouge-500)' }`. */
   palette?: Record<string, string>;
   className?: string;
   /** Renseigne pour un picto porteur de sens, laisse vide pour un decor. */
@@ -51,17 +54,30 @@ export interface SpriteProps {
   fill?: boolean;
 }
 
-export function Sprite({ name, size = 16, palette, className, title, fill = false }: SpriteProps) {
-  const data = SPRITES[name];
+export function Sprite({
+  name,
+  data,
+  size = 16,
+  palette,
+  className,
+  title,
+  fill = false,
+}: SpriteProps) {
+  const sprite = data ?? SPRITES[name ?? 'chip'];
   const colors = useMemo(() => ({ ...DEFAULT_PALETTE, ...palette }), [palette]);
-  const runs = useMemo(() => toRuns(data, colors), [data, colors]);
+  const runs = useMemo(() => toRuns(sprite, colors), [sprite, colors]);
+
+  // Les portraits ne sont pas carres : on garde leurs proportions.
+  const ratio = sprite.width / sprite.height;
+  const width = ratio >= 1 ? size : Math.round(size * ratio);
+  const height = ratio >= 1 ? Math.round(size / ratio) : size;
 
   return (
     <svg
       className={className}
-      width={fill ? '100%' : size}
-      height={fill ? '100%' : size}
-      viewBox={`0 0 ${data.width} ${data.height}`}
+      width={fill ? '100%' : width}
+      height={fill ? '100%' : height}
+      viewBox={`0 0 ${sprite.width} ${sprite.height}`}
       preserveAspectRatio={fill ? 'none' : 'xMidYMid meet'}
       shapeRendering="crispEdges"
       role={title ? 'img' : 'presentation'}

@@ -69,13 +69,14 @@ export function Broke({ onRecovered }: { onRecovered: () => void }) {
   }
 
   return (
-    <div className="doubler-backdrop">
-      <div className="doubler broke">
-        <Sprite name="skull" size={56} className="center" title="Banque vide" />
-        <h2 className="doubler__title" style={{ marginTop: 'var(--u3)' }}>
-          PLUS UN JETON
-        </h2>
-        <p className="t-body t-muted" style={{ marginTop: 'var(--u2)' }}>
+    <div className="stage-backdrop">
+      <div className="stage broke">
+        <div className="stage__emblem">
+          <Sprite name="skull" size={72} title="Banque vide" />
+        </div>
+        <p className="stage__kicker t-perte">Banque vide</p>
+        <h2 className="stage__title">Plus un jeton</h2>
+        <p className="stage__detail">
           Le videur te regarde de travers. Trois façons de remonter sur la table.
         </p>
 
@@ -89,9 +90,11 @@ export function Broke({ onRecovered }: { onRecovered: () => void }) {
               setMode('roue');
             }}
           >
-            <Sprite name="wheel" size={44} />
-            <span className="tile__name">Roue de la Dernière Chance</span>
-            <span className="t-body t-muted">
+            <span className="broke__icon">
+              <Sprite name="wheel" size={36} />
+            </span>
+            <span className="broke__name">Roue de la Dernière Chance</span>
+            <span className="broke__desc">
               {wheelAvailable
                 ? 'De 100 $ à 500 $. Une rotation par tranche de 20 heures.'
                 : 'Déjà utilisée. Reviens dans quelques heures.'}
@@ -107,9 +110,11 @@ export function Broke({ onRecovered }: { onRecovered: () => void }) {
               if (takeLoan()) onRecovered();
             }}
           >
-            <Sprite name="bill" size={44} />
-            <span className="tile__name">Mafia du Casino</span>
-            <span className="t-body t-muted">
+            <span className="broke__icon">
+              <Sprite name="bill" size={36} />
+            </span>
+            <span className="broke__name">Mafia du Casino</span>
+            <span className="broke__desc">
               {debt > 0
                 ? `Tu dois déjà ${formatMoney(debt)}. Pas de deuxième avance.`
                 : `${formatMoney(MAFIA_LOAN)} tout de suite, ${formatMoney(MAFIA_DEBT)} a rendre via une taxe de 20 % sur tes gains.`}
@@ -124,9 +129,11 @@ export function Broke({ onRecovered }: { onRecovered: () => void }) {
               setMode('job');
             }}
           >
-            <Sprite name="coin" size={44} />
-            <span className="tile__name">Job d&apos;appoint</span>
-            <span className="t-body t-muted">
+            <span className="broke__icon">
+              <Sprite name="coin" size={36} />
+            </span>
+            <span className="broke__name">Job d&apos;appoint</span>
+            <span className="broke__desc">
               Dix secondes pour ramasser les pièces tombées sous les machines. Jusqu&apos;à{' '}
               {formatMoney(SIDE_JOB_REWARD)}.
             </span>
@@ -135,8 +142,7 @@ export function Broke({ onRecovered }: { onRecovered: () => void }) {
 
         <button
           type="button"
-          className="btn btn--ghost btn--wide"
-          style={{ marginTop: 'var(--u4)' }}
+          className="link-btn stage__escape"
           onClick={() => {
             sfxButton();
             onRecovered();
@@ -185,10 +191,10 @@ function LastChanceWheel({
   };
 
   return (
-    <div className="doubler-backdrop">
-      <div className="doubler">
-        <p className="doubler__kicker">SUR LE COMPTOIR</p>
-        <h2 className="doubler__title">ROUE DE LA DERNIERE CHANCE</h2>
+    <div className="stage-backdrop">
+      <div className="stage">
+        <p className="stage__kicker">Sur le comptoir</p>
+        <h2 className="stage__title">Roue de la dernière chance</h2>
 
         <div className="lastchance">
           <div
@@ -211,16 +217,16 @@ function LastChanceWheel({
                   <g key={s.amount}>
                     <path
                       d={`M50,50 L${x1.toFixed(2)},${y1.toFixed(2)} A48,48 0 0 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z`}
-                      fill={i % 2 === 0 ? '#305c3c' : '#12100d'}
-                      stroke="#050807"
-                      strokeWidth="0.6"
+                      fill={i % 2 === 0 ? '#1e6c51' : '#1b1815'}
+                      stroke="#d68e1f"
+                      strokeWidth="0.5"
                     />
                     <text
                       x={50 + 33 * Math.cos(mid)}
                       y={50 + 33 * Math.sin(mid)}
-                      fill="#f2c14e"
-                      fontSize="8"
-                      fontFamily="VT323, monospace"
+                      fill="#ffcd57"
+                      fontSize="9"
+                      fontFamily="'Jersey 10', monospace"
                       textAnchor="middle"
                       dominantBaseline="middle"
                       transform={`rotate(${(i + 0.5) * slice} ${50 + 33 * Math.cos(mid)} ${50 + 33 * Math.sin(mid)})`}
@@ -230,14 +236,15 @@ function LastChanceWheel({
                   </g>
                 );
               })}
-              <circle cx="50" cy="50" r="10" fill="#4a2712" stroke="#050807" strokeWidth="1" />
+              <circle cx="50" cy="50" r="12" fill="#3b2a1d" stroke="#d68e1f" strokeWidth="1" />
+              <circle cx="50" cy="50" r="5" fill="#ffe08a" />
             </svg>
           </div>
           <span className="lastchance__needle" aria-hidden="true" />
         </div>
 
         {amount === null ? (
-          <div className="doubler__actions">
+          <div className="stage__actions stage__actions--row">
             <button type="button" className="btn btn--lg grow" disabled={spinning} onClick={spin}>
               {spinning ? 'Elle tourne...' : 'Lancer la roue'}
             </button>
@@ -247,7 +254,7 @@ function LastChanceWheel({
           </div>
         ) : (
           <>
-            <div className="led led--green result-panel__amount">+ {formatMoney(amount)}</div>
+            <div className="stage__amount num">+ {formatMoney(amount)}</div>
             <button type="button" className="btn btn--lg btn--wide" onClick={() => onDone(amount)}>
               Empocher et retourner jouer
             </button>
@@ -304,17 +311,15 @@ function SideJob({ onDone, onCancel }: { onDone: (amount: number) => void; onCan
   }, [running]);
 
   return (
-    <div className="doubler-backdrop">
-      <div className="doubler sidejob">
-        <p className="doubler__kicker">SOUS LES MACHINES</p>
-        <h2 className="doubler__title">JOB D&apos;APPOINT</h2>
+    <div className="stage-backdrop">
+      <div className="stage sidejob">
+        <p className="stage__kicker">Sous les machines</p>
+        <h2 className="stage__title">Job d&apos;appoint</h2>
 
-        <div className="row row--between" style={{ margin: 'var(--u4) 0' }}>
-          <span className="led led--green" style={{ fontSize: 24 }}>
-            {formatMoney(earned)}
-          </span>
-          <span className="led" style={{ fontSize: 24 }}>
-            {(timeLeft / 1000).toFixed(1)} s
+        <div className="sidejob__hud">
+          <span className="led led--green sidejob__led">{formatMoney(earned)}</span>
+          <span className="led sidejob__led">
+            {(timeLeft / 1000).toFixed(1).replace('.', ',')} s
           </span>
         </div>
 
@@ -339,7 +344,7 @@ function SideJob({ onDone, onCancel }: { onDone: (amount: number) => void; onCan
           {finished ? <p className="t-body sidejob__hint">Service termine.</p> : null}
         </div>
 
-        <div className="doubler__actions">
+        <div className="stage__actions stage__actions--row">
           {finished ? (
             <button type="button" className="btn btn--lg grow" onClick={() => onDone(earned)}>
               Encaisser {formatMoney(earned)}

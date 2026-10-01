@@ -4,6 +4,10 @@ import App from './App';
 import './styles/global.css';
 import './styles/ui.css';
 import './styles/card.css';
+import './styles/lobby.css';
+import './styles/poker.css';
+import './styles/blackjack.css';
+import './styles/roulette.css';
 import './styles/tables.css';
 import './styles/doubler.css';
 

@@ -294,36 +294,65 @@ export const SPRITE_HEART = sprite([
 ]);
 ```
 
-Un test valide leurs dimensions et interdit toute couleur hors palette. Le composant `Sprite`
+Un test valide leurs dimensions, celles des portraits de figures, et interdit toute couleur hors
+palette. Le composant `Sprite`
 compresse chaque ligne en segments avant de produire le SVG, ce qui divise par cinq environ le
 nombre de noeuds à l'écran.
 
+**Quatre matières, pas une de plus.** Feutre émeraude pour les surfaces de jeu, ébène laquée pour
+les rails et les panneaux, laiton pour l'unique couleur d'action, ivoire pour les cartes et le
+texte. Les jetons de score suivent la convention des roguelikes de cartes : jetons en bleu,
+multiplicateur en rouge. Tout est déclaré dans [`src/styles/tokens.css`](src/styles/tokens.css).
+
+**Un feutre tramé, pas un dégradé.** Le fond est peint une fois par taille de fenêtre dans un canvas
+basse définition, avec un tramage ordonné de Bayer 4x4 et une fibre de bruit déterministe, puis
+agrandi sans lissage (voir [`FeltBackdrop.tsx`](src/components/FeltBackdrop.tsx)). La lumière
+tombe d'une lampe suspendue au-dessus de la table.
+
+**Contours pixel aux coins entaillés.** Panneaux, boutons et cartes utilisent quatre ombres nettes,
+une par côté : les coins restent vides, ce qui dessine un arrondi d'un pixel d'art sans
+`border-radius`. Les boutons sont des plaques de laiton posées sur un socle : la lèvre disparaît
+quand on appuie.
+
 **Cartes dessinées, pas typographiées.** Les pips suivent la disposition réelle d'un jeu de cartes,
 en trois colonnes, avec les pips de la moitié basse retournés à 180 degrés. Le valet, la dame et le
-roi ont leur propre portrait pixel. Aucun caractère Unicode de couleur n'est utilisé.
+roi ont leur propre portrait de 18 pixels de large (couronne, barbe, sceptre, rose, épée), dans
+[`src/assets/portraits.ts`](src/assets/portraits.ts). Chaque carte a trois couches : une ombre qui
+reste posée sur le tapis, une levée qui porte le survol et la sélection, et un vrai retournement 3D.
+Au survol, la carte s'incline vers le pointeur.
 
-**Rien n'est aligné au pixel près.** Chaque carte reçoit une inclinaison déduite d'un hachage de son
-identifiant, entre -2 et +2 degrés. La même carte garde toujours le même angle : ça bouge à la
-distribution, pas à chaque rendu React.
+**Les tables ressemblent à des tables.** Blackjack en demi-lune avec ses mentions imprimées en arc
+sur le feutre, un sabot et un cercle de mise où la pile de jetons grandit. Roulette au tapis
+authentique : zéro vertical, colonnes « 2:1 » en bout de ligne, douzaines dessous, losanges rouge
+et noir. Survoler un pari allume les numéros couverts, le numéro sorti reste marqué, et la bille
+s'arrête vraiment sur la case gagnante. Sur téléphone, le tapis se redresse à la verticale.
 
-**Feutrine et tube cathodique.** Le fond combine un dégradé radial vert feutrine, un grain généré en
-SVG et des lignes de balayage horizontales.
+**Une table, un écran.** À table, l'écran devient une console de hauteur fixe : rien ne
+demande de défiler, du grand écran au téléphone de 360 px. Les cartes et la roue se dimensionnent
+d'après la hauteur réellement disponible (container queries), le blackjack range ses commandes dans
+une console à droite de la table, et sur téléphone la roulette garde le tapis à l'écran et fait
+surgir la roue en grand le temps du lancer.
 
-**Boutons d'arcade.** Aucune ombre floue nulle part. Les reliefs sont des décalages nets et les
-transitions utilisent `steps()` : un bouton d'arcade ne glisse pas, il claque.
+**Le décompte se voit.** Au poker, la main jouée quitte l'éventail et se pose au centre. Chaque carte
+qui marque saute et ajoute sa valeur, chaque joker réagit à son tour, puis le total tombe sur la
+table et la jauge se remplit. Les montants qui entrent ou sortent de la banque s'envolent du
+compteur, et tous les chiffres défilent au lieu de sauter.
 
-**Game juice.** Distribution décalée carte par carte, jetons qui glissent sur le tapis, tremblement
-d'écran discret sur les pertes, pluie de jetons en canvas 2D sur les gros gains, avec gravité,
-friction et rebond amorti.
+**Game juice, avec retenue.** Pluie de jetons en canvas 2D sur les gros gains, tremblement d'écran
+discret sur les pertes, enseigne à ampoules en chenillard dans le hall. Les animations d'interface
+restent sous 300 ms, avec des courbes de sortie franches. Les mises en page de la main (tri,
+défausse, jeu) sont animées avec [Motion](https://motion.dev). Le réglage « Animations réduites »
+et la préférence système coupent tout le décor.
 
 **Son entièrement synthétisé.** Voir [`src/audio/sfx.ts`](src/audio/sfx.ts) : oscillateurs carrés
 façon puce 8 bits pour les jingles, bruit blanc filtré en passe-bande pour les cartes qui glissent
-et les jetons en céramique. Le contexte audio ne se crée qu'au premier geste de l'utilisateur.
+et les jetons en céramique, un tic qui monte d'un demi-ton à chaque carte qui marque. Le contexte
+audio ne se crée qu'au premier geste de l'utilisateur.
 
-**Typographie.** Press Start 2P pour les titres et les boutons, VT323 pour les afficheurs LED et le
-texte courant. Les deux polices sont auto-hébergées en woff2. Press Start 2P ne fournit pas de
-majuscules accentuées : les quelques titres tout en capitales restent donc sans accent, tout le
-reste du texte est accentué normalement.
+**Typographie.** Jacquard 24, un gothique pixel, réservé à l'enseigne « Pocket Casino ». Jersey 10,
+gros pixels condensés, pour les titres, les boutons et les chiffres. Jersey 25, grille plus fine,
+pour le texte courant. Les trois polices sont auto-hébergées en woff2 et gèrent les capitales
+accentuées.
 
 ---
 
@@ -349,7 +378,7 @@ src/
 ├── components/      Briques d'interface réutilisables
 ├── screens/         Un écran par mode, plus boutique, trophées, règles
 ├── audio/sfx.ts     Synthèse sonore Web Audio
-├── assets/          Sprites pixel art et polices
+├── assets/          Sprites, portraits de figures et polices
 └── styles/          Feuilles CSS par domaine
 ```
 
@@ -460,6 +489,9 @@ dépendances de production de l'autre, plus une passe mensuelle sur les actions 
 - Les notifications sont dans une région `aria-live="polite"`.
 - `prefers-reduced-motion` est respecté automatiquement, et un bouton `Animations réduites` dans le
   pied de page permet de couper le tremblement d'écran et la pluie de jetons à la demande.
+- Raccourcis clavier aux tables : au poker, `1` à `8` sélectionnent les cartes, `Entrée` joue la
+  main et `D` défausse ; au blackjack, `T` tire, `R` reste, `D` double, `S` splitte et `Entrée`
+  distribue. Les touches sont rappelées sur les boutons quand un pointeur fin est présent.
 - Le son se coupe en un clic depuis la barre du haut, et le choix est mémorisé.
 - La mise en page tient de 390 px de large jusqu'aux grands écrans.
 

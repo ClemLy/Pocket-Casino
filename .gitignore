@@ -89,6 +89,22 @@ Thumbs.db
 desktop.ini
 
 # ---------------------------------------------------------------------------
+# Assistants IA : skills, agents, regles et memoires locales
+# Ces dossiers sont propres a chaque poste et ne font pas partie du jeu.
+# ---------------------------------------------------------------------------
+.agents/
+.claude/
+.codex/
+.cursor/
+.windsurf/
+.continue/
+.aider*
+.tastemaker/
+skills-lock.json
+CLAUDE.local.md
+AGENTS.local.md
+
+# ---------------------------------------------------------------------------
 # Divers
 # ---------------------------------------------------------------------------
 tmp/

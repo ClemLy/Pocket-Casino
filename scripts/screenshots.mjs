@@ -204,12 +204,14 @@ const SHOTS = [
     name: '02-poker',
     async run(browser) {
       const page = await openPage(browser);
-      await page.getByRole('button', { name: /POKER ROGUELIKE/ }).click();
+      await page.getByRole('button', { name: /Poker Roguelike/ }).click();
       await page.getByRole('button', { name: /Payer le buy-in/ }).click();
       await page.waitForTimeout(700);
       // Sélectionne les trois premières cartes pour afficher l'aperçu de score.
-      const cards = page.locator('.hand .card');
-      for (const index of [0, 1, 2]) await cards.nth(index).click();
+      const cards = page.locator('.hand-fan .card');
+      // Les cartes respirent au repos : on force le clic plutot que d'attendre
+      // une stabilite qui n'arrive jamais.
+      for (const index of [0, 1, 2]) await cards.nth(index).click({ force: true });
       await shoot(page, '02-poker');
       await page.context().close();
     },
@@ -222,18 +224,21 @@ const SHOTS = [
       // garde la premiere partie gagnante : la capture reste deterministe.
       for (const seed of [1, 4, 7, 12, 20, 33]) {
         const page = await openPage(browser, { seed });
-        await page.getByRole('button', { name: /POKER ROGUELIKE/ }).click();
+        await page.getByRole('button', { name: /Poker Roguelike/ }).click();
         await page.getByRole('button', { name: /Payer le buy-in/ }).click();
         await page.waitForTimeout(600);
 
         for (let round = 0; round < 4; round++) {
-          const cards = page.locator('.hand .card');
+          const cards = page.locator('.hand-fan .card');
           const total = await cards.count();
           if (total === 0) break;
-          for (const index of await bestSelection(cards, total)) await cards.nth(index).click();
-          await page.getByRole('button', { name: 'Jouer la main' }).click();
-          await page.waitForTimeout(900);
-          const gagne = page.getByRole('button', { name: 'QUITTE OU DOUBLE' });
+          for (const index of await bestSelection(cards, total)) {
+            await cards.nth(index).click({ force: true });
+          }
+          await page.getByRole('button', { name: /Jouer la main/ }).click();
+          // Le decompte anime carte par carte avant de rendre la main.
+          await page.waitForTimeout(4800);
+          const gagne = page.getByRole('button', { name: /Quitte ou double/i });
           if (await gagne.isVisible().catch(() => false)) {
             await page.getByRole('button', { name: /Encaisser/ }).click();
             await page.waitForTimeout(800);
@@ -242,7 +247,7 @@ const SHOTS = [
         }
 
         const enBoutique = await page
-          .getByText(/BOUTIQUE DE MANCHE/)
+          .getByText(/Boutique de manche/i)
           .isVisible()
           .catch(() => false);
 
@@ -260,9 +265,9 @@ const SHOTS = [
     name: '04-blackjack',
     async run(browser) {
       const page = await openPage(browser);
-      await page.getByRole('button', { name: /BLACKJACK ARCADE/ }).click();
+      await page.getByRole('button', { name: /Blackjack Arcade/ }).click();
       await page.getByRole('button', { name: 'Miser 100 $' }).click();
-      await page.getByRole('checkbox').check();
+      await page.getByRole('checkbox').check({ force: true });
       await page.getByRole('button', { name: /Distribuer/ }).click();
       await page.waitForTimeout(1100);
       await shoot(page, '04-blackjack');
@@ -273,7 +278,7 @@ const SHOTS = [
     name: '05-roulette',
     async run(browser) {
       const page = await openPage(browser);
-      await page.getByRole('button', { name: /TURBO ROULETTE/ }).click();
+      await page.getByRole('button', { name: /Roulette Turbo/ }).click();
       await page.waitForTimeout(400);
       await page.locator('.outside__cell--rouge').click();
       await page.locator('.board__cell', { hasText: /^7$/ }).first().click();
@@ -286,14 +291,14 @@ const SHOTS = [
     name: '06-quitte-ou-double',
     async run(browser) {
       const page = await openPage(browser);
-      await page.getByRole('button', { name: /TURBO ROULETTE/ }).click();
+      await page.getByRole('button', { name: /Roulette Turbo/ }).click();
       await page.waitForTimeout(400);
       // Rouge et Noir couverts : tout sauf le zero rend la mise, la manche est
       // donc gagnante et le bouton Quitte ou Double apparait.
       await page.locator('.outside__cell--rouge').click();
       await page.locator('.outside__cell--noir').click();
       await page.getByRole('button', { name: /Lancer la bille/ }).click();
-      await page.getByRole('button', { name: 'QUITTE OU DOUBLE' }).click({ timeout: 20000 });
+      await page.getByRole('button', { name: /Quitte ou double/i }).click({ timeout: 20000 });
       await page.waitForTimeout(500);
       await shoot(page, '06-quitte-ou-double');
       await page.context().close();
@@ -304,7 +309,7 @@ const SHOTS = [
     async run(browser) {
       const page = await openPage(browser);
       await page.getByRole('button', { name: 'Carnet de règles' }).click();
-      await page.getByRole('tab', { name: 'BLACKJACK' }).click();
+      await page.getByRole('tab', { name: 'Blackjack' }).click();
       await shoot(page, '07-carnet-de-regles');
       await page.context().close();
     },
@@ -354,10 +359,12 @@ const SHOTS = [
     name: '11-mobile',
     async run(browser) {
       const page = await openPage(browser, { viewport: MOBILE });
-      await page.getByRole('button', { name: /BLACKJACK ARCADE/ }).click();
+      await page.getByRole('button', { name: /Blackjack Arcade/ }).click();
       await page.getByRole('button', { name: 'Miser 25 $' }).click();
       await page.getByRole('button', { name: /Distribuer/ }).click();
       await page.waitForTimeout(1100);
+      // Le clic a fait defiler jusqu'aux boutons : on remonte pour montrer la table.
+      await page.evaluate(() => window.scrollTo(0, 0));
       await shoot(page, '11-mobile');
       await page.context().close();
     },

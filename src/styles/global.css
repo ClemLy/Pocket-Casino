@@ -13,18 +13,23 @@
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
-  font-family: var(--font-arcade);
-  color: var(--bone-100);
-  background: var(--felt-900);
-  -webkit-font-smoothing: none;
-  font-smooth: never;
-  text-rendering: geometricPrecision;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: 1.2;
+  color: var(--ivory-100);
+  background: var(--room-950);
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  font-synthesis: none;
 }
 
 button,
@@ -32,12 +37,17 @@ input,
 select {
   font: inherit;
   color: inherit;
+  letter-spacing: inherit;
 }
 
 button {
   cursor: pointer;
   border: 0;
   background: none;
+  padding: 0;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 button:disabled {
@@ -57,214 +67,324 @@ h3,
 h4,
 p {
   margin: 0;
+  font-weight: 400;
 }
 
 img,
-svg {
+svg,
+canvas {
   display: block;
+}
+
+svg {
   image-rendering: pixelated;
 }
 
 :focus-visible {
-  outline: 3px solid var(--brass-500);
-  outline-offset: 3px;
+  outline: var(--px) solid var(--brass-300);
+  outline-offset: 4px;
 }
 
 ::selection {
-  background: var(--brass-500);
-  color: var(--ink-900);
+  background: var(--brass-400);
+  color: var(--ebony-950);
 }
 
 /* ==========================================================================
-   Le meuble : fond de table, grain, vignettage
+   Le meuble : salle, lampe et feutre
    ========================================================================== */
 
 .cabinet {
   position: relative;
-  min-height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(
-    circle at 50% 18%,
-    var(--felt-600) 0%,
-    var(--felt-800) 48%,
-    var(--felt-900) 100%
-  );
   isolation: isolate;
 }
 
-/* Grain de feutrine : legerement anime pour eviter l'aspect plastique fige. */
-.cabinet::before {
-  content: '';
-  position: fixed;
-  inset: -10%;
-  background-image: var(--felt-grain);
-  background-size: 120px 120px;
-  opacity: 0.16;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-  z-index: 1;
+.cabinet > main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Lignes de balayage facon ecran cathodique. */
+/* A table, l'ecran est une console de hauteur fixe : rien ne doit obliger a
+   defiler pour voir le jeu. Chaque table repartit la hauteur disponible, et
+   le defilement interne ne sert que de filet sur les ecrans minuscules. */
+.cabinet--game {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+}
+
+.cabinet--game > main {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  container-type: size;
+}
+
+/* Zone de jeu : conteneur de taille, pour que les cartes et la roue se
+   dimensionnent d'apres la hauteur reellement disponible (unites cqh). */
+.game {
+  flex: 1;
+  min-height: 0;
+  width: min(1320px, 100%);
+  margin: 0 auto;
+  padding: var(--s4) var(--s5);
+}
+
+/* Fond dithere peint sur un canvas basse definition (voir FeltBackdrop). */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  background: var(--felt-900);
+}
+
+/* Vignettage doux pardessus le dithering : la lampe eclaire le centre. */
 .cabinet::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.16) 0px,
-    rgba(0, 0, 0, 0.16) 1px,
-    transparent 1px,
-    transparent 3px
-  );
+  z-index: 60;
   pointer-events: none;
-  opacity: 0.55;
-  z-index: 40;
-}
-
-.cabinet > * {
-  position: relative;
-  z-index: 2;
+  background:
+    radial-gradient(120% 90% at 50% 30%, transparent 55%, rgba(2, 6, 5, 0.55) 100%),
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.06) 0 1px, transparent 1px 3px);
 }
 
 /* ==========================================================================
-   Panneaux et bordures pixel
+   Panneaux
    ========================================================================== */
 
 .panel {
-  background: var(--felt-700);
-  border: var(--u1) solid var(--ink-900);
-  box-shadow: var(--bevel-light), var(--bevel-dark), var(--drop-4);
-  padding: var(--u4);
-}
-
-.panel--wood {
-  background: linear-gradient(var(--wood-500), var(--wood-700));
+  position: relative;
+  padding: var(--s5);
+  background: linear-gradient(180deg, var(--ebony-800), var(--ebony-900) 60%);
   box-shadow:
-    inset 0 var(--u1) 0 var(--wood-300),
-    inset 0 calc(var(--u1) * -1) 0 var(--wood-900),
-    var(--drop-4);
+    var(--outline),
+    inset 0 var(--px) 0 rgba(255, 236, 200, 0.07),
+    inset 0 0 0 calc(var(--px) * 2) var(--ebony-900),
+    inset 0 0 0 calc(var(--px) * 2 + 1px) rgba(244, 181, 59, 0.16),
+    0 calc(var(--px) * 3) 0 calc(var(--px) * -1) rgba(0, 0, 0, 0.45);
 }
 
-.panel--dark {
-  background: var(--ink-700);
+.panel--flat {
+  background: var(--ebony-900);
 }
 
-.panel__title {
-  font-size: 11px;
-  letter-spacing: 1px;
-  color: var(--brass-500);
-  text-shadow: 2px 2px 0 var(--ink-900);
-  margin-bottom: var(--u3);
+.panel--felt {
+  background: linear-gradient(180deg, var(--felt-700), var(--felt-800));
+  box-shadow:
+    var(--outline),
+    inset 0 var(--px) 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 calc(var(--px) * 2) var(--felt-800),
+    inset 0 0 0 calc(var(--px) * 2 + 1px) rgba(244, 181, 59, 0.14),
+    0 calc(var(--px) * 3) 0 calc(var(--px) * -1) rgba(0, 0, 0, 0.45);
+}
+
+/* Petit titre grave en laiton, avec un filet qui file jusqu'au bord. */
+.engraved {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass-400);
+}
+
+.engraved::after {
+  content: '';
+  flex: 1;
+  height: var(--px);
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(244, 181, 59, 0.35) 0 var(--px),
+    transparent var(--px) calc(var(--px) * 2)
+  );
+}
+
+.engraved--plain::after {
+  display: none;
 }
 
 /* ==========================================================================
    Typographie
    ========================================================================== */
 
-.t-title {
-  font-size: clamp(16px, 3.4vw, 28px);
-  line-height: 1.5;
-  text-shadow: 3px 3px 0 var(--ink-900);
+.t-sign {
+  font-family: var(--font-sign);
+  color: var(--brass-400);
+  line-height: 0.95;
+  text-shadow:
+    0 var(--px) 0 var(--brass-700),
+    0 calc(var(--px) * 2) 0 var(--brass-800),
+    0 calc(var(--px) * 3) 0 rgba(0, 0, 0, 0.6);
 }
 
-/* Press Start 2P dessine les minuscules en petites capitales et ne fournit pas
-   de majuscules accentuees. On laisse donc la casse d'origine : la police cree
-   l'effet capitales toute seule, et les accents restent lisibles. */
+.t-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.t-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  line-height: 1;
+  color: var(--ivory-50);
+  text-shadow: 0 var(--px) 0 rgba(0, 0, 0, 0.55);
+}
+
 .t-label {
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--bone-300);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ivory-400);
 }
 
 .t-body {
-  font-family: var(--font-led);
-  font-size: 19px;
-  line-height: 1.35;
-  color: var(--bone-100);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: 1.25;
+  color: var(--ivory-200);
+  text-wrap: pretty;
+}
+
+.t-small {
+  font-size: var(--fs-sm);
 }
 
 .t-muted {
-  color: var(--bone-500);
+  color: var(--ivory-400);
 }
 
 .t-gain {
-  color: var(--led-green);
+  color: var(--win);
 }
 
 .t-perte {
-  color: var(--led-red);
+  color: var(--lose);
 }
 
 .t-brass {
-  color: var(--brass-500);
+  color: var(--brass-400);
+}
+
+.t-chips {
+  color: var(--chips-500);
+}
+
+.t-mult {
+  color: var(--mult-500);
+}
+
+.num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 /* ==========================================================================
-   Boutons d'arcade
+   Boutons : plaques de laiton avec levre, coins entailles
    ========================================================================== */
 
 .btn {
+  --btn-face: var(--brass-400);
+  --btn-top: var(--brass-300);
+  --btn-lip: var(--brass-700);
+  --btn-ink: var(--ebony-950);
+  --btn-glint: rgba(255, 245, 210, 0.55);
+  --lift: 0px;
+
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--u2);
-  padding: var(--u3) var(--u4);
-  font-size: 10px;
-  letter-spacing: 1px;
-  color: var(--ink-900);
-  background: var(--brass-500);
-  border: var(--u1) solid var(--ink-900);
+  gap: var(--s2);
+  min-height: 44px;
+  padding: var(--s2) var(--s5) calc(var(--s2) + var(--px));
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--btn-ink);
+  background: linear-gradient(180deg, var(--btn-top) 0 calc(var(--px) * 2), var(--btn-face) 0);
   box-shadow:
-    inset 0 var(--u1) 0 rgba(255, 255, 255, 0.5),
-    inset 0 calc(var(--u1) * -1) 0 var(--brass-700),
-    0 var(--u1) 0 var(--ink-900),
-    0 var(--u2) 0 rgba(0, 0, 0, 0.55);
-  transform: translateY(0);
+    var(--outline),
+    inset 0 calc(var(--px) * -1) 0 var(--btn-lip),
+    inset calc(var(--px) * -1) 0 0 rgba(0, 0, 0, 0.12),
+    0 calc(var(--px) * 2) 0 0 var(--line),
+    0 calc(var(--px) * 3) 0 0 rgba(0, 0, 0, 0.35);
+  transform: translateY(var(--lift));
   transition:
-    transform var(--speed-fast) steps(2),
-    box-shadow var(--speed-fast) steps(2),
-    filter var(--speed-fast);
+    transform var(--t-press) var(--ease-out),
+    box-shadow var(--t-press) var(--ease-out),
+    filter var(--t-fast) ease;
   text-align: center;
+  white-space: nowrap;
 }
 
-.btn:hover:not(:disabled) {
-  filter: brightness(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled) {
+    --lift: -2px;
+    filter: brightness(1.08);
+  }
 }
 
-/* L'enfoncement est en `steps()` : un bouton d'arcade ne glisse pas, il claque. */
+/* Enfonce : la plaque descend sur son socle et la levre disparait. */
 .btn:active:not(:disabled) {
-  transform: translateY(var(--u2));
+  --lift: calc(var(--px) * 2);
   box-shadow:
-    inset 0 var(--u1) 0 rgba(255, 255, 255, 0.3),
-    inset 0 calc(var(--u1) * -1) 0 var(--brass-700),
-    0 0 0 var(--ink-900);
+    var(--outline),
+    inset 0 var(--px) 0 rgba(0, 0, 0, 0.18),
+    0 0 0 0 var(--line);
+  transition-duration: 40ms;
 }
 
 .btn:disabled {
-  filter: grayscale(0.75) brightness(0.55);
+  --btn-face: var(--ebony-600);
+  --btn-top: var(--ebony-500);
+  --btn-lip: var(--ebony-800);
+  --btn-ink: var(--ivory-500);
+  cursor: not-allowed;
 }
 
 .btn--ghost {
-  color: var(--bone-100);
-  background: var(--felt-600);
-  box-shadow:
-    inset 0 var(--u1) 0 rgba(255, 255, 255, 0.12),
-    inset 0 calc(var(--u1) * -1) 0 rgba(0, 0, 0, 0.5),
-    0 var(--u1) 0 var(--ink-900),
-    0 var(--u2) 0 rgba(0, 0, 0, 0.5);
+  --btn-face: var(--ebony-700);
+  --btn-top: var(--ebony-600);
+  --btn-lip: var(--ebony-900);
+  --btn-ink: var(--ivory-100);
+}
+
+.btn--felt {
+  --btn-face: var(--felt-500);
+  --btn-top: var(--felt-400);
+  --btn-lip: var(--felt-800);
+  --btn-ink: var(--ivory-50);
 }
 
 .btn--danger {
-  background: var(--crimson-500);
-  color: var(--bone-100);
-  box-shadow:
-    inset 0 var(--u1) 0 rgba(255, 255, 255, 0.28),
-    inset 0 calc(var(--u1) * -1) 0 var(--crimson-600),
-    0 var(--u1) 0 var(--ink-900),
-    0 var(--u2) 0 rgba(0, 0, 0, 0.55);
+  --btn-face: var(--rouge-500);
+  --btn-top: var(--rouge-400);
+  --btn-lip: var(--rouge-700);
+  --btn-ink: var(--ivory-50);
+}
+
+.btn--chips {
+  --btn-face: var(--chips-500);
+  --btn-top: var(--chips-300);
+  --btn-lip: var(--chips-700);
+  --btn-ink: var(--ivory-50);
 }
 
 .btn--wide {
@@ -272,55 +392,153 @@ svg {
 }
 
 .btn--sm {
-  padding: var(--u2) var(--u3);
-  font-size: 8px;
+  min-height: 34px;
+  padding: var(--s1) var(--s3) calc(var(--s1) + var(--px));
+  font-size: var(--fs-sm);
 }
 
 .btn--lg {
-  padding: var(--u4) var(--u6);
-  font-size: 13px;
+  min-height: 58px;
+  padding: var(--s3) var(--s6) calc(var(--s3) + var(--px));
+  font-size: var(--fs-lg);
+}
+
+/* Bouton texte : pour les sorties secondaires, sans plaque. */
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s1);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ivory-400);
+  transition: color var(--t-fast) ease;
+}
+
+.link-btn:hover:not(:disabled) {
+  color: var(--brass-300);
+}
+
+.link-btn--danger:hover:not(:disabled) {
+  color: var(--lose);
+}
+
+.link-btn:disabled {
+  opacity: 0.45;
+}
+
+/* Touche de clavier affichee sur les boutons (ecrans a pointeur fin). */
+.kbd {
+  display: none;
+  min-width: 20px;
+  padding: 1px 4px 2px;
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  line-height: 1;
+  color: inherit;
+  opacity: 0.6;
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .kbd {
+    display: inline-block;
+  }
 }
 
 /* ==========================================================================
-   Afficheur LED de la banque
+   Afficheur a segments : banque, mises, totaux
    ========================================================================== */
 
 .led {
-  font-family: var(--font-led);
-  color: var(--led-amber);
-  background: #180d02;
-  border: var(--u1) solid var(--ink-900);
-  box-shadow:
-    inset 0 0 0 2px rgba(255, 182, 39, 0.12),
-    inset 0 0 18px rgba(255, 182, 39, 0.22);
-  padding: var(--u1) var(--u3);
-  text-shadow: 0 0 6px rgba(255, 182, 39, 0.85);
-  letter-spacing: 2px;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 2px var(--s3) 4px;
+  font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--amber);
+  background: #120a03;
+  box-shadow:
+    var(--outline),
+    inset 0 var(--px) 0 rgba(0, 0, 0, 0.7),
+    inset 0 0 14px rgba(255, 176, 46, 0.14);
+  text-shadow:
+    0 0 8px rgba(255, 176, 46, 0.55),
+    0 0 1px rgba(255, 230, 180, 0.9);
+  white-space: nowrap;
 }
 
 .led--green {
-  color: var(--led-green);
-  text-shadow: 0 0 6px rgba(107, 241, 120, 0.8);
+  color: var(--win);
+  text-shadow: 0 0 8px rgba(95, 224, 138, 0.55);
   box-shadow:
-    inset 0 0 0 2px rgba(107, 241, 120, 0.12),
-    inset 0 0 18px rgba(107, 241, 120, 0.22);
+    var(--outline),
+    inset 0 var(--px) 0 rgba(0, 0, 0, 0.7),
+    inset 0 0 14px rgba(95, 224, 138, 0.14);
 }
 
 .led--red {
-  color: var(--led-red);
-  text-shadow: 0 0 6px rgba(255, 89, 100, 0.8);
+  color: var(--lose);
+  text-shadow: 0 0 8px rgba(255, 92, 98, 0.55);
 }
 
 /* ==========================================================================
-   Utilitaires de mise en page
+   Pastilles
+   ========================================================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px 3px;
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--ivory-200);
+  background: var(--ebony-950);
+  box-shadow: inset 0 0 0 2px var(--ebony-600);
+  white-space: nowrap;
+}
+
+.badge--gold {
+  color: var(--ebony-950);
+  background: var(--brass-400);
+  box-shadow: inset 0 -2px 0 var(--brass-700);
+}
+
+.badge--green {
+  color: var(--ebony-950);
+  background: var(--win);
+  box-shadow: inset 0 -2px 0 var(--win-deep);
+}
+
+.badge--red {
+  color: var(--ivory-50);
+  background: var(--rouge-500);
+  box-shadow: inset 0 -2px 0 var(--rouge-700);
+}
+
+.badge--violet {
+  color: var(--ivory-50);
+  background: var(--violet-600);
+  box-shadow: inset 0 -2px 0 #3b1f8a;
+}
+
+/* ==========================================================================
+   Mise en page
    ========================================================================== */
 
 .row {
   display: flex;
   align-items: center;
-  gap: var(--u3);
+  gap: var(--s3);
 }
 
 .row--between {
@@ -331,10 +549,14 @@ svg {
   flex-wrap: wrap;
 }
 
+.row--end {
+  justify-content: flex-end;
+}
+
 .col {
   display: flex;
   flex-direction: column;
-  gap: var(--u3);
+  gap: var(--s3);
 }
 
 .grow {
@@ -344,18 +566,19 @@ svg {
 .center {
   display: grid;
   place-items: center;
+  text-align: center;
 }
 
 .shell {
-  width: min(1100px, 100%);
+  width: min(1240px, 100%);
   margin: 0 auto;
-  padding: var(--u4);
+  padding: var(--s6) var(--s5);
 }
 
 .stack-sm {
   display: flex;
   flex-direction: column;
-  gap: var(--u2);
+  gap: var(--s2);
 }
 
 .sr-only {
@@ -370,6 +593,24 @@ svg {
   border: 0;
 }
 
+/* Entree d'ecran : courte montee, jamais plus de 260 ms. Pas de remplissage
+   final : une animation maintenue cree un contexte d'empilement qui piegerait
+   les scenes plein ecran sous le rail. */
+.screen-enter {
+  animation: screen-in 260ms var(--ease-out);
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ==========================================================================
    Animations partagees
    ========================================================================== */
@@ -381,69 +622,87 @@ svg {
   }
   50%,
   100% {
-    opacity: 0.25;
+    opacity: 0.3;
   }
 }
 
 @keyframes shake {
-  0% {
+  0%,
+  100% {
     transform: translate(0, 0);
   }
   20% {
-    transform: translate(-3px, 2px);
+    transform: translate(-4px, 2px);
   }
   40% {
-    transform: translate(3px, -2px);
+    transform: translate(4px, -2px);
   }
   60% {
-    transform: translate(-2px, -2px);
+    transform: translate(-3px, -1px);
   }
   80% {
-    transform: translate(2px, 2px);
-  }
-  100% {
-    transform: translate(0, 0);
+    transform: translate(3px, 1px);
   }
 }
 
-@keyframes pop-in {
+@keyframes pop {
   0% {
-    transform: scale(0.7) translateY(10px);
-    opacity: 0;
+    transform: scale(1);
   }
-  70% {
-    transform: scale(1.06) translateY(0);
-    opacity: 1;
+  35% {
+    transform: scale(1.22);
   }
   100% {
-    transform: scale(1) translateY(0);
+    transform: scale(1);
   }
 }
 
-@keyframes slide-up {
+@keyframes rise-in {
   from {
-    transform: translateY(14px);
     opacity: 0;
+    transform: translateY(12px) scale(0.98);
   }
   to {
-    transform: translateY(0);
     opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(0.9);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -4px) scale(1.08);
+  }
+  30% {
+    transform: translate(-50%, -8px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -38px) scale(1);
   }
 }
 
 .shake {
-  animation: shake 220ms steps(2) 1;
+  animation: shake 240ms linear 1;
 }
 
 .blink {
-  animation: blink 620ms steps(1, end) infinite;
+  animation: blink 700ms steps(1, end) infinite;
 }
 
-/* Le tremblement d'ecran est volontairement discret et desactivable. */
+.pop {
+  animation: pop 260ms var(--ease-out);
+}
+
 .screen-shake {
-  animation: shake 260ms steps(2) 2;
+  animation: shake 280ms linear 2;
 }
 
+/* Les animations de decor s'eteignent, les fondus utiles restent. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -451,15 +710,14 @@ svg {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-body[data-motion='reduced'] .cabinet::before,
-body[data-motion='reduced'] .cabinet::after {
-  animation: none;
-}
-
-body[data-motion='reduced'] .blink {
-  animation: none;
-  opacity: 1;
+body[data-motion='reduced'] *,
+body[data-motion='reduced'] *::before,
+body[data-motion='reduced'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
 }

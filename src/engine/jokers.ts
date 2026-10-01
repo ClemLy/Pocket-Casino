@@ -162,9 +162,25 @@ export interface AggregatedJokers {
   notes: string[];
 }
 
-/** Applique les jokers dans l'ordre où ils sont possédés, puis cumule les effets. */
-export function applyJokers(ids: readonly string[], ctx: JokerContext): AggregatedJokers {
-  const result: AggregatedJokers = { chips: 0, mult: 0, xMult: 1, notes: [] };
+/** Effet d'un joker qui s'est declenche sur une main donnee. */
+export interface JokerTrigger {
+  id: string;
+  effect: JokerEffect;
+}
+
+export interface DetailedJokers extends AggregatedJokers {
+  /** Un element par joker declenche, dans l'ordre de possession. */
+  triggers: JokerTrigger[];
+}
+
+/**
+ * Comme `applyJokers`, mais garde aussi la trace de chaque declenchement.
+ * L'interface s'en sert pour faire reagir chaque joker a son tour pendant le
+ * decompte. Chaque joker n'est evalue qu'une fois : les tirages aleatoires
+ * (Machine a Sous) restent coherents entre le detail et le total.
+ */
+export function applyJokersDetailed(ids: readonly string[], ctx: JokerContext): DetailedJokers {
+  const result: DetailedJokers = { chips: 0, mult: 0, xMult: 1, notes: [], triggers: [] };
   for (const id of ids) {
     const joker = findJoker(id);
     if (!joker) continue;
@@ -174,6 +190,13 @@ export function applyJokers(ids: readonly string[], ctx: JokerContext): Aggregat
     result.mult += effect.mult ?? 0;
     result.xMult *= effect.xMult ?? 1;
     if (effect.note) result.notes.push(effect.note);
+    result.triggers.push({ id, effect });
   }
   return result;
+}
+
+/** Applique les jokers dans l'ordre où ils sont possédés, puis cumule les effets. */
+export function applyJokers(ids: readonly string[], ctx: JokerContext): AggregatedJokers {
+  const { triggers: _triggers, ...aggregate } = applyJokersDetailed(ids, ctx);
+  return aggregate;
 }

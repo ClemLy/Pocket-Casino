@@ -1,6 +1,7 @@
-import { memo, useMemo } from 'react';
+import { memo, type CSSProperties, type PointerEvent, useMemo, useRef } from 'react';
 import { type Card, cardLabel, isRed, type Rank, type Suit } from '../engine/cards';
 import type { SpriteName } from '../assets/sprites';
+import { PORTRAITS, type PortraitName } from '../assets/portraits';
 import { Sprite } from './Sprite';
 
 const SUIT_SPRITE: Record<Suit, SpriteName> = {
@@ -10,7 +11,7 @@ const SUIT_SPRITE: Record<Suit, SpriteName> = {
   C: 'club',
 };
 
-const FIGURE_SPRITE: Partial<Record<Rank, SpriteName>> = {
+const FIGURE: Partial<Record<Rank, PortraitName>> = {
   J: 'jack',
   Q: 'queen',
   K: 'king',
@@ -111,6 +112,15 @@ function naturalTilt(id: string): number {
 
 export type CardSize = 'sm' | 'md' | 'lg';
 
+const PIP_PX: Record<CardSize, number> = { sm: 10, md: 14, lg: 17 };
+const CORNER_PX: Record<CardSize, number> = { sm: 8, md: 10, lg: 12 };
+const ACE_PX: Record<CardSize, number> = { sm: 26, md: 38, lg: 46 };
+const FIGURE_PX: Record<CardSize, number> = { sm: 36, md: 54, lg: 66 };
+
+const canHover =
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
+
 export interface PlayingCardProps {
   card: Card;
   faceDown?: boolean;
@@ -120,12 +130,19 @@ export interface PlayingCardProps {
   selected?: boolean;
   /** Met la carte en avant quand elle compte dans la combinaison. */
   scoring?: boolean;
+  /** Change de valeur pour faire sauter la carte (déclenchement de score). */
+  pulse?: number;
   dimmed?: boolean;
   burned?: boolean;
+  /** Arrive depuis le sabot, avec un léger décalage. */
   dealing?: boolean;
   dealDelay?: number;
+  /** Arrive face cachée puis se retourne. */
+  flipIn?: boolean;
+  flipDelay?: number;
   onClick?: () => void;
   disabled?: boolean;
+  className?: string;
 }
 
 function PlayingCardBase({
@@ -135,28 +152,34 @@ function PlayingCardBase({
   tilt,
   selected = false,
   scoring = false,
+  pulse = 0,
   dimmed = false,
   burned = false,
   dealing = false,
   dealDelay = 0,
+  flipIn = false,
+  flipDelay = 0,
   onClick,
   disabled = false,
+  className,
 }: PlayingCardProps) {
+  const liftRef = useRef<HTMLSpanElement>(null);
   const red = isRed(card);
-  const ink = red ? 'var(--crimson-500)' : 'var(--ink-900)';
-  const palette = useMemo(() => ({ a: ink, c: ink }), [ink]);
+  const ink = red ? 'var(--rouge-500)' : 'var(--noir-700)';
+  const palette = useMemo(() => ({ a: ink }), [ink]);
+  const interactive = Boolean(onClick) && !disabled;
 
   const classes = [
     'card',
-    size === 'sm' && 'card--sm',
-    size === 'lg' && 'card--lg',
-    faceDown && 'card--back',
-    onClick && !disabled && 'card--interactive',
+    `card--${size}`,
+    interactive && 'card--interactive',
     selected && 'card--selected',
     scoring && 'card--scoring',
     dimmed && 'card--dimmed',
     burned && 'card--burned',
     dealing && 'card--dealing',
+    flipIn && 'card--flip-in',
+    className,
   ]
     .filter(Boolean)
     .join(' ');
@@ -164,68 +187,82 @@ function PlayingCardBase({
   const style = {
     '--tilt': `${tilt ?? naturalTilt(card.id)}deg`,
     '--deal-delay': `${dealDelay}ms`,
-  } as React.CSSProperties;
+    '--flip-delay': `${flipDelay}ms`,
+  } as CSSProperties;
 
-  if (faceDown) {
-    return (
-      <div className={classes} style={style} aria-label="Carte face cachée" role="img">
-        <span className="card__back-art" />
-      </div>
-    );
-  }
+  // L'inclinaison suit le pointeur directement sur l'element, sans re-render.
+  const onPointerMove = (event: PointerEvent<HTMLElement>) => {
+    const lift = liftRef.current;
+    if (!lift || !canHover || !interactive) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const nx = (event.clientX - rect.left) / rect.width - 0.5;
+    const ny = (event.clientY - rect.top) / rect.height - 0.5;
+    lift.style.setProperty('--ry', `${(nx * 16).toFixed(2)}deg`);
+    lift.style.setProperty('--rx', `${(-ny * 16).toFixed(2)}deg`);
+    lift.style.setProperty('--gx', `${((nx + 0.5) * 100).toFixed(1)}%`);
+    lift.style.setProperty('--gy', `${((ny + 0.5) * 100).toFixed(1)}%`);
+  };
 
-  const pipSize = size === 'sm' ? 9 : size === 'lg' ? 15 : 12;
-  const cornerSize = size === 'sm' ? 7 : size === 'lg' ? 11 : 9;
+  const onPointerLeave = () => {
+    const lift = liftRef.current;
+    if (!lift) return;
+    lift.style.setProperty('--ry', '0deg');
+    lift.style.setProperty('--rx', '0deg');
+  };
+
   const pips = PIP_LAYOUT[card.rank];
-  const figure = FIGURE_SPRITE[card.rank];
+  const figure = FIGURE[card.rank];
+  const suit = SUIT_SPRITE[card.suit];
 
-  const content = (
+  const corner = (position: 'tl' | 'br') => (
+    <span className={`card__corner card__corner--${position}`} style={{ color: ink }}>
+      <span className={`card__rank${card.rank === '10' ? ' card__rank--ten' : ''}`}>
+        {card.rank}
+      </span>
+      <Sprite name={suit} size={CORNER_PX[size]} palette={palette} />
+    </span>
+  );
+
+  const inner = (
     <>
-      <span className="card__corner card__corner--tl" style={{ color: ink }}>
-        <span className={`card__rank${card.rank === '10' ? ' card__rank--ten' : ''}`}>
-          {card.rank}
-        </span>
-        <Sprite name={SUIT_SPRITE[card.suit]} size={cornerSize} palette={palette} />
-      </span>
-
-      <span className="card__body">
-        {pips ? (
-          pips.map(([col, row], i) => (
-            <span
-              key={i}
-              className={`card__pip${row > 0.5 ? ' card__pip--flipped' : ''}`}
-              style={{ left: `${col * 50}%`, top: `${row * 100}%` }}
-            >
-              <Sprite name={SUIT_SPRITE[card.suit]} size={pipSize} palette={palette} />
+      <span className="card__shadow" aria-hidden="true" />
+      <span className="card__lift" ref={liftRef} key={pulse || undefined}>
+        <span className={`card__flip${faceDown ? ' is-down' : ''}`}>
+          <span className="card__face card__face--front">
+            {corner('tl')}
+            <span className="card__body">
+              {pips ? (
+                pips.map(([col, row], i) => (
+                  <span
+                    key={i}
+                    className={`card__pip${row > 0.5 ? ' card__pip--flipped' : ''}`}
+                    style={{ left: `${col * 50}%`, top: `${row * 100}%` }}
+                  >
+                    <Sprite name={suit} size={PIP_PX[size]} palette={palette} />
+                  </span>
+                ))
+              ) : figure ? (
+                <span className="card__figure" style={{ color: ink }}>
+                  <Sprite data={PORTRAITS[figure]} size={FIGURE_PX[size]} palette={palette} />
+                </span>
+              ) : (
+                <span className="card__ace">
+                  <Sprite name={suit} size={ACE_PX[size]} palette={palette} />
+                </span>
+              )}
             </span>
-          ))
-        ) : figure ? (
-          <span className="card__figure" style={{ color: ink }}>
-            <Sprite
-              name={figure}
-              size={size === 'sm' ? 30 : size === 'lg' ? 56 : 44}
-              palette={palette}
-            />
+            {corner('br')}
           </span>
-        ) : (
-          <span className="card__center">
-            <Sprite
-              name={SUIT_SPRITE[card.suit]}
-              size={size === 'sm' ? 24 : size === 'lg' ? 44 : 34}
-              palette={palette}
-            />
+          <span className="card__face card__face--back" aria-hidden="true">
+            <span className="card__back-art" />
           </span>
-        )}
-      </span>
-
-      <span className="card__corner card__corner--br" style={{ color: ink }}>
-        <span className={`card__rank${card.rank === '10' ? ' card__rank--ten' : ''}`}>
-          {card.rank}
         </span>
-        <Sprite name={SUIT_SPRITE[card.suit]} size={cornerSize} palette={palette} />
+        <span className="card__glare" aria-hidden="true" />
       </span>
     </>
   );
+
+  const label = faceDown ? 'Carte face cachée' : cardLabel(card);
 
   if (onClick) {
     return (
@@ -234,18 +271,20 @@ function PlayingCardBase({
         className={classes}
         style={style}
         onClick={onClick}
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
         disabled={disabled}
         aria-pressed={selected}
-        aria-label={cardLabel(card)}
+        aria-label={label}
       >
-        {content}
+        {inner}
       </button>
     );
   }
 
   return (
-    <div className={classes} style={style} role="img" aria-label={cardLabel(card)}>
-      {content}
+    <div className={classes} style={style} role="img" aria-label={label}>
+      {inner}
     </div>
   );
 }

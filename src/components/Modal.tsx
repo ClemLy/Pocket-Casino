@@ -7,10 +7,12 @@ export interface ModalProps {
   children: ReactNode;
   /** Contenu colle sous l'entete, hors zone scrollable (onglets par exemple). */
   subheader?: ReactNode;
+  /** Ligne d'accroche sous le titre. */
+  kicker?: string;
   wide?: boolean;
 }
 
-export function Modal({ title, onClose, children, subheader, wide = false }: ModalProps) {
+export function Modal({ title, onClose, children, subheader, kicker, wide = false }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -20,8 +22,12 @@ export function Modal({ title, onClose, children, subheader, wide = false }: Mod
     document.addEventListener('keydown', onKey);
     // Le focus part sur le panneau pour que la touche Echap et la lecture
     // d'écran atterrissent au bon endroit.
+    const previous = document.activeElement as HTMLElement | null;
     panelRef.current?.focus();
-    return () => document.removeEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      previous?.focus?.();
+    };
   }, [onClose]);
 
   return (
@@ -33,24 +39,26 @@ export function Modal({ title, onClose, children, subheader, wide = false }: Mod
     >
       <div
         ref={panelRef}
-        className="modal"
+        className={`modal${wide ? ' modal--wide' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        style={wide ? { width: 'min(980px, 100%)' } : undefined}
       >
         <header className="modal__head">
-          <h2 className="modal__title">{title}</h2>
+          <div className="modal__titles">
+            {kicker ? <p className="modal__kicker">{kicker}</p> : null}
+            <h2 className="modal__title">{title}</h2>
+          </div>
           <button
             type="button"
-            className="btn btn--sm modal__close"
+            className="btn btn--ghost btn--sm modal__close"
             onClick={() => {
               sfxButton();
               onClose();
             }}
           >
-            Fermer
+            Fermer <span className="kbd">Esc</span>
           </button>
         </header>
         {subheader}

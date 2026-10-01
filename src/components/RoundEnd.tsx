@@ -3,6 +3,7 @@ import { formatMoney } from '../engine/economy';
 import { useCasino } from '../store/useCasino';
 import { useJuice } from '../store/useJuice';
 import { sfxBigWin, sfxButton, sfxLose } from '../audio/sfx';
+import { useRollingNumber } from './useRollingNumber';
 import { DoubleOrNothing } from './DoubleOrNothing';
 import { Sprite } from './Sprite';
 
@@ -36,6 +37,8 @@ export function RoundEnd({
   const recordStat = useCasino((s) => s.recordStat);
   const unlock = useCasino((s) => s.unlock);
   const juice = useJuice();
+  const won = amount > 0;
+  const rolled = useRollingNumber(won ? amount : 0, { min: 500, max: 1100, start: 0 });
 
   const finish = (finalAmount: number) => {
     if (settled) return;
@@ -59,58 +62,49 @@ export function RoundEnd({
     return <DoubleOrNothing amount={amount} onSettle={(final) => finish(final)} />;
   }
 
-  const won = amount > 0;
-
   return (
-    <div className="doubler-backdrop" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="doubler">
-        <div className="result-panel">
-          <Sprite
-            name={won ? 'coin' : 'skull'}
-            size={64}
-            title={won ? 'Gain' : 'Perte'}
-            className="center"
-            palette={{ o: 'var(--ink-900)' }}
-          />
-          <h2 className="doubler__title" style={{ marginTop: 'var(--u4)' }}>
-            {title}
-          </h2>
-          {detail ? (
-            <p className="t-body t-muted" style={{ marginTop: 'var(--u2)' }}>
-              {detail}
-            </p>
-          ) : null}
+    <div className="stage-backdrop" role="dialog" aria-modal="true" aria-label={title}>
+      <div className={`stage${won ? ' stage--won' : ' stage--lost'}`}>
+        <div className="stage__emblem" aria-hidden="true">
+          {won ? <span className="stage__rays" /> : null}
+          <Sprite name={won ? 'coin' : 'skull'} size={72} />
+        </div>
+        <p className="stage__kicker">{won ? 'Manche gagnée' : 'Manche perdue'}</p>
+        <h2 className="stage__title">{title}</h2>
+        {detail ? <p className="stage__detail">{detail}</p> : null}
 
-          <div className={`led result-panel__amount${won ? ' led--green' : ' led--red'}`}>
-            {won ? `+ ${formatMoney(amount)}` : formatMoney(0)}
+        <div className={`stage__amount num${won ? '' : ' is-zero'}`}>
+          {won ? `+ ${formatMoney(rolled)}` : formatMoney(0)}
+        </div>
+
+        {won ? (
+          <div className="stage__actions">
+            <button
+              type="button"
+              className="doubler-call"
+              onClick={() => {
+                sfxButton();
+                setGambling(true);
+              }}
+            >
+              <span className="doubler-call__label">Quitte ou double</span>
+              <span className="doubler-call__hint">Rouge ou noir, jusqu&apos;à x8</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost btn--wide"
+              onClick={() => finish(amount)}
+            >
+              Encaisser {formatMoney(amount)}
+            </button>
           </div>
-
-          {won ? (
-            <div className="col">
-              <button
-                type="button"
-                className="doubler-call blink"
-                onClick={() => {
-                  sfxButton();
-                  setGambling(true);
-                }}
-              >
-                QUITTE OU DOUBLE
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost btn--wide"
-                onClick={() => finish(amount)}
-              >
-                Encaisser {formatMoney(amount)}
-              </button>
-            </div>
-          ) : (
-            <button type="button" className="btn btn--wide" onClick={() => finish(0)}>
+        ) : (
+          <div className="stage__actions">
+            <button type="button" className="btn btn--lg btn--wide" onClick={() => finish(0)}>
               {continueLabel}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

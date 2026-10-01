@@ -1,0 +1,1004 @@
+/* ==========================================================================
+   Roulette : la roue a gauche, le croupier a droite, le tapis dessous
+   ========================================================================== */
+
+/* La roue a gauche sur toute la hauteur, le tapis a droite qui s'etire pour
+   remplir l'espace, et une barre de commandes compacte sous le tapis. */
+.roulette {
+  /* La roue prend la plus grande taille qui tient en hauteur et en largeur. */
+  --wheel-size: min(calc(100cqh - 200px), 33cqw, 440px);
+
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'wheel board'
+    'history bar';
+  gap: var(--s4) var(--s6);
+  height: 100%;
+  min-height: 0;
+}
+
+.wheel-column {
+  grid-area: wheel;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+
+.roulette .wheel {
+  width: var(--wheel-size);
+}
+
+/* ------------------------------------------------------------- la roue */
+
+.wheel {
+  position: relative;
+  width: min(420px, 100%);
+  aspect-ratio: 1;
+  filter: drop-shadow(0 10px 0 rgba(0, 0, 0, 0.35));
+}
+
+.wheel__bowl,
+.wheel__disc,
+.wheel__disc svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.wheel__disc {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.12, 0.8, 0.18, 1);
+}
+
+.wheel__ball-track {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.wheel__ball {
+  position: absolute;
+  top: 8.6%;
+  left: 50%;
+  width: 3.4%;
+  aspect-ratio: 1;
+  margin-left: -1.7%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff 0 30%, #d9d2c4 60%, #8e877a);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 2px 3px rgba(0, 0, 0, 0.6);
+  transition-property: top;
+  transition-timing-function: cubic-bezier(0.7, 0, 0.84, 0);
+}
+
+/* Pendant le lancer, la bille file sur la piste exterieure. */
+.wheel__ball--spinning {
+  top: 3%;
+}
+
+/* Repere de lecture : la case gagnante s'arrete toujours dessous. */
+.wheel__marker {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 16px solid var(--brass-400);
+  filter: drop-shadow(0 3px 0 var(--ebony-950));
+}
+
+.wheel__readout {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.wheel__number {
+  display: grid;
+  place-items: center;
+  width: 26%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: clamp(32px, 7vw, 54px);
+  line-height: 1;
+  color: var(--ivory-50);
+  box-shadow:
+    0 0 0 3px var(--ebony-950),
+    0 0 0 6px var(--brass-500),
+    0 0 0 9px var(--ebony-950),
+    0 0 36px rgba(255, 205, 87, 0.5);
+  animation: slam 460ms var(--ease-out);
+}
+
+.wheel__number--rouge {
+  background: var(--rouge-500);
+}
+
+.wheel__number--noir {
+  background: var(--noir-700);
+}
+
+.wheel__number--vert {
+  background: #1f8a5a;
+}
+
+/* Historique facon tableau lumineux de casino */
+.history {
+  grid-area: history;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  width: var(--wheel-size);
+  min-width: 0;
+}
+
+.history__list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+}
+
+.history__empty {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--ivory-500);
+  align-self: center;
+}
+
+.history__pill {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 6px 2px;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  color: var(--ivory-50);
+  box-shadow: var(--outline);
+  animation: rise-in 260ms var(--ease-out);
+}
+
+.history__pill--rouge {
+  background: var(--rouge-500);
+}
+
+.history__pill--noir {
+  background: var(--noir-700);
+}
+
+.history__pill--vert {
+  background: #1f8a5a;
+}
+
+.history__pill.is-last {
+  min-width: 40px;
+  height: 34px;
+  font-size: var(--fs-lg);
+  box-shadow:
+    var(--outline),
+    0 0 0 calc(var(--px) + 2px) var(--brass-400);
+}
+
+/* ------------------------------------------------------- commandes */
+
+.roulette-bar {
+  grid-area: bar;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'type chips stake'
+    'row row row';
+  align-items: center;
+  gap: var(--s4) var(--s5);
+  padding: var(--s4) var(--s5);
+}
+
+/* Deuxieme rangee : options a gauche, lancer a droite. */
+.roulette-bar__row {
+  grid-area: row;
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+}
+
+.roulette-bar__type {
+  grid-area: type;
+}
+
+/* Dans la barre, le nombre de cases passe en infobulle : la place va aux jetons. */
+.roulette-bar .segmented__meta,
+.segmented__short {
+  display: none;
+}
+
+.roulette-bar__stake .t-label {
+  display: none;
+}
+
+.roulette-bar__chips {
+  grid-area: chips;
+  flex-wrap: nowrap;
+  padding-top: var(--s2);
+}
+
+.roulette-bar__chips .chip {
+  --chip-size: 48px;
+}
+
+.roulette-bar__stake {
+  grid-area: stake;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.roulette-bar__led {
+  min-width: 130px;
+  font-size: 32px;
+  padding: 2px var(--s3) 5px;
+}
+
+.roulette-bar__safety {
+  grid-area: safety;
+}
+
+.roulette-bar__safety .toggle__title {
+  white-space: nowrap;
+}
+
+.roulette-bar__presets {
+  grid-area: presets;
+  justify-self: center;
+}
+
+.roulette-bar__go {
+  grid-area: go;
+  display: flex;
+  gap: var(--s3);
+  margin-left: auto;
+}
+
+.roulette-bar__go .btn--lg:last-child {
+  min-width: 180px;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s1);
+  padding: var(--s1);
+  background: var(--ebony-950);
+  box-shadow: inset 0 0 0 2px var(--ebony-700);
+}
+
+.segmented__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--s1) var(--s4) var(--s2);
+  color: var(--ivory-300);
+  transition:
+    color var(--t-fast) ease,
+    background-color var(--t-fast) ease;
+}
+
+.segmented__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  line-height: 1;
+}
+
+.segmented__meta {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  opacity: 0.75;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .segmented__btn:hover:not(:disabled) {
+    color: var(--ivory-50);
+  }
+}
+
+.segmented__btn.is-on {
+  color: var(--ebony-950);
+  background: var(--brass-400);
+  box-shadow: inset 0 -3px 0 var(--brass-700);
+}
+
+.presets {
+  position: relative;
+}
+
+.presets__summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.presets__summary::-webkit-details-marker {
+  display: none;
+}
+
+.presets__summary::after {
+  content: '';
+  width: 0;
+  height: 0;
+  margin-left: 2px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid currentColor;
+}
+
+/* Le menu s'ouvre vers le haut : la barre est en bas de l'ecran. */
+.presets__menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s2);
+  width: max-content;
+  min-width: 220px;
+  max-width: min(320px, 80vw);
+  padding: var(--s3);
+  background: var(--ebony-950);
+  box-shadow:
+    var(--outline),
+    inset 0 0 0 2px var(--ebony-700),
+    0 8px 0 rgba(0, 0, 0, 0.4);
+  transform: translateX(-50%);
+  animation: rise-in 160ms var(--ease-out);
+}
+
+.presets__empty {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--ivory-500);
+}
+
+.preset {
+  display: flex;
+  background: var(--ebony-950);
+  box-shadow: inset 0 0 0 2px var(--ebony-600);
+}
+
+.preset__load {
+  flex: 1;
+  text-align: left;
+  padding: 4px var(--s3) 6px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--ivory-100);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .preset__load:hover:not(:disabled) {
+    color: var(--brass-300);
+  }
+}
+
+.preset__del {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  box-shadow: inset 2px 0 0 var(--ebony-600);
+}
+
+/* Croix en pixels, sans glyphe. */
+.preset__cross {
+  position: relative;
+  width: 10px;
+  height: 10px;
+}
+
+.preset__cross::before,
+.preset__cross::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: -1px;
+  width: 12px;
+  height: 2px;
+  background: var(--rouge-400);
+  transform: rotate(45deg);
+}
+
+.preset__cross::after {
+  transform: rotate(-45deg);
+}
+
+/* ------------------------------------------------------------- le tapis */
+
+.layout {
+  grid-area: board;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s3);
+  min-height: 0;
+  padding: clamp(14px, 3cqh, 24px) var(--s6);
+  background: radial-gradient(
+    90% 120% at 50% 0%,
+    var(--felt-600),
+    var(--felt-800) 70%,
+    var(--felt-900)
+  );
+  box-shadow:
+    var(--outline),
+    inset 0 0 0 10px var(--ebony-800),
+    inset 0 0 0 12px var(--brass-700),
+    inset 0 0 0 13px rgba(0, 0, 0, 0.5),
+    inset 0 0 60px rgba(0, 0, 0, 0.4),
+    0 calc(var(--px) * 3) 0 calc(var(--px) * -1) rgba(0, 0, 0, 0.45);
+}
+
+/* Les filets de laiton sont portes par chaque case : les coins vides du
+   tapis (sous le zero, sous les colonnes) restent du feutre nu. */
+.layout {
+  --grid-line: 0 0 0 1px rgba(255, 205, 87, 0.5);
+}
+
+.layout__grid {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 64px repeat(var(--cols), minmax(0, 1fr)) 72px;
+  grid-template-rows: repeat(3, minmax(34px, 1fr)) minmax(30px, 0.8fr);
+  max-height: 440px;
+  min-height: 0;
+  padding: 1px;
+}
+
+.layout--turbo .layout__grid {
+  grid-template-columns: 64px repeat(var(--cols), minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(40px, 1fr));
+}
+
+.board__cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  line-height: 1;
+  color: var(--ivory-50);
+  box-shadow: var(--grid-line);
+  transition:
+    filter var(--t-fast) ease,
+    box-shadow var(--t-fast) ease;
+}
+
+.board__cell > span {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .board__cell:hover:not(:disabled) {
+    filter: brightness(1.3);
+  }
+}
+
+.board__cell:disabled {
+  cursor: not-allowed;
+}
+
+.board__cell--rouge {
+  background: var(--rouge-600);
+}
+
+.board__cell--noir {
+  background: var(--noir-700);
+}
+
+.layout__grid > .board__cell:not(.board__cell--zero),
+.layout__grid > .outside__cell {
+  grid-column: var(--c);
+  grid-row: var(--r);
+}
+
+.board__cell--zero,
+.board__cell--vert {
+  grid-column: 1;
+  grid-row: 1 / 4;
+  background: #1a7a4f;
+  font-size: var(--fs-xl);
+}
+
+.board__cell.is-covered,
+.outside__cell.is-covered {
+  filter: brightness(1.35);
+  box-shadow:
+    inset 0 0 0 3px var(--brass-300),
+    var(--grid-line);
+}
+
+/* Numero sorti : le "dolly" du croupier, un pion de laiton pose dessus. */
+.board__cell.is-winner,
+.outside__cell.is-winner {
+  box-shadow:
+    inset 0 0 0 3px var(--brass-300),
+    var(--grid-line),
+    0 0 18px 2px rgba(255, 205, 87, 0.6);
+  z-index: 2;
+  animation: winner-glow 1s steps(2, end) 3;
+}
+
+.board__cell.is-winner::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 12px;
+  height: 12px;
+  background: var(--brass-300);
+  box-shadow:
+    0 0 0 2px var(--ebony-950),
+    0 0 10px rgba(255, 205, 87, 0.9);
+  transform: rotate(45deg);
+}
+
+@keyframes winner-glow {
+  50% {
+    filter: brightness(1.5);
+  }
+}
+
+/* Jetons poses : en coin de case, pour laisser le numero lisible. */
+.board__cell .chip,
+.outside__cell .chip {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.outside__cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--s1) var(--s2);
+  color: var(--ivory-50);
+  background: var(--felt-700);
+  box-shadow: var(--grid-line);
+  transition:
+    filter var(--t-fast) ease,
+    box-shadow var(--t-fast) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .outside__cell:hover:not(:disabled) {
+    filter: brightness(1.25);
+  }
+}
+
+.outside__cell:disabled {
+  cursor: not-allowed;
+}
+
+.outside__label {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.outside__odds {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  color: var(--brass-300);
+}
+
+.outside__cell--colonne .outside__label {
+  font-size: var(--fs-lg);
+  color: var(--brass-300);
+}
+
+/* Losanges rouge et noir, imprimes comme sur les vraies tables. */
+.outside__diamond {
+  width: 26px;
+  height: 26px;
+  transform: rotate(45deg) scale(0.8, 1.2);
+  box-shadow: 0 0 0 2px rgba(255, 240, 200, 0.6);
+}
+
+.outside__cell--rouge .outside__diamond {
+  background: var(--rouge-500);
+}
+
+.outside__cell--noir .outside__diamond {
+  background: var(--noir-700);
+}
+
+.outside__cell--rouge .outside__label,
+.outside__cell--noir .outside__label {
+  position: absolute;
+  clip: rect(0 0 0 0);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.layout__simples {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding: 1px;
+  margin-left: 65px;
+  margin-right: 73px;
+}
+
+.layout__simples .outside__cell {
+  min-height: clamp(40px, 7cqh, 58px);
+}
+
+.layout--turbo .layout__simples {
+  margin-right: 1px;
+}
+
+.layout__note {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  text-align: center;
+  color: rgba(255, 240, 200, 0.5);
+}
+
+@media (max-width: 1100px) {
+  .roulette {
+    --wheel-size: min(calc(100cqh - 230px), 30cqw, 400px);
+  }
+
+  .roulette-bar {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'type stake'
+      'chips chips'
+      'row row';
+    gap: var(--s3);
+  }
+
+  .roulette-bar__stake {
+    justify-self: end;
+  }
+
+  .roulette-bar__chips {
+    justify-content: flex-start;
+  }
+
+  .roulette-bar__go .btn--lg:last-child {
+    min-width: 0;
+  }
+
+  .roulette-bar__go .btn--lg {
+    padding-inline: var(--s4);
+    font-size: var(--fs-md);
+  }
+
+  .roulette-bar__row {
+    gap: var(--s4);
+  }
+
+  .roulette-bar__long {
+    display: none;
+  }
+}
+
+/* Tablette et telephone : le tapis se redresse et prend l'ecran, la barre de
+   commandes se cale dessous, et la roue surgit en grand le temps du lancer. */
+@media (max-width: 900px) {
+  .roulette {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'history'
+      'board'
+      'bar';
+    gap: var(--s2);
+  }
+
+  .wheel-column {
+    position: fixed;
+    inset: 0;
+    z-index: 54;
+    padding: var(--s5);
+    background:
+      radial-gradient(60% 45% at 50% 50%, rgba(255, 190, 90, 0.14), transparent 70%),
+      rgba(2, 6, 5, 0.82);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 200ms ease,
+      visibility 0s linear 200ms;
+  }
+
+  .wheel-column.is-live {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity 200ms ease,
+      visibility 0s;
+  }
+
+  .roulette .wheel {
+    width: min(86vw, 62vh, 420px);
+  }
+
+  .history {
+    flex-direction: row;
+    justify-content: flex-start;
+    width: auto;
+    gap: var(--s3);
+    overflow: hidden;
+  }
+
+  .history > .t-label {
+    flex: 0 0 auto;
+  }
+
+  .history__list {
+    flex-wrap: nowrap;
+    min-height: 0;
+  }
+
+  .history__pill {
+    min-width: 28px;
+    height: 26px;
+    font-size: var(--fs-sm);
+  }
+
+  .history__pill.is-last {
+    min-width: 32px;
+    height: 28px;
+    font-size: var(--fs-md);
+  }
+
+  .layout {
+    gap: var(--s2);
+    padding: var(--s3);
+    box-shadow:
+      var(--outline),
+      inset 0 0 0 6px var(--ebony-800),
+      inset 0 0 0 8px var(--brass-700),
+      inset 0 0 40px rgba(0, 0, 0, 0.4);
+  }
+
+  .layout__grid {
+    max-height: none;
+    grid-template-columns: 44px repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(26px, 1.2fr) repeat(var(--cols), minmax(18px, 1fr)) minmax(24px, 1fr);
+  }
+
+  .layout--turbo .layout__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(30px, 1.2fr) repeat(var(--cols), minmax(30px, 1fr));
+  }
+
+  .layout__grid > .board__cell:not(.board__cell--zero),
+  .layout__grid > .outside__cell {
+    grid-column: var(--vc);
+    grid-row: var(--vr);
+  }
+
+  .board__cell--zero {
+    grid-column: 2 / span 3;
+    grid-row: 1;
+    font-size: var(--fs-lg);
+  }
+
+  .layout--turbo .board__cell--zero {
+    grid-column: 1 / span 3;
+  }
+
+  .board__cell {
+    font-size: var(--fs-md);
+  }
+
+  .board__cell .chip,
+  .outside__cell .chip {
+    --chip-size: 20px;
+    right: 2px;
+    bottom: 50%;
+    transform: translateY(50%);
+  }
+
+  .board__cell .chip .chip__value,
+  .outside__cell .chip .chip__value {
+    font-size: 9px;
+  }
+
+  .board__cell.is-winner::after {
+    top: 50%;
+    left: 6px;
+    right: auto;
+    width: 9px;
+    height: 9px;
+    margin-top: -4px;
+  }
+
+  .outside__cell--douzaine .outside__label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: var(--fs-xs);
+  }
+
+  .outside__cell--douzaine .outside__odds {
+    display: none;
+  }
+
+  .outside__cell--colonne .outside__label {
+    font-size: var(--fs-sm);
+  }
+
+  /* Les six chances simples sur une seule rangee. */
+  .layout__simples {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin: 0;
+  }
+
+  .layout__simples .outside__cell {
+    min-height: 40px;
+    padding: 2px;
+  }
+
+  .layout__simples .outside__label {
+    font-size: var(--fs-xs);
+  }
+
+  .layout__simples .outside__odds {
+    display: none;
+  }
+
+  .outside__diamond {
+    width: 16px;
+    height: 16px;
+  }
+
+  .layout__note {
+    display: none;
+  }
+
+  /* La rangee d'options se fond dans la grille de la barre. */
+  .roulette-bar__row {
+    display: contents;
+  }
+
+  .roulette-bar__go {
+    margin-left: 0;
+  }
+
+  .roulette-bar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'chips chips stake'
+      'type safety presets'
+      'go go go';
+    gap: var(--s2) var(--s3);
+    padding: var(--s3);
+  }
+
+  .roulette-bar__chips {
+    gap: 6px;
+    padding-top: 6px;
+  }
+
+  .roulette-bar__chips .chip {
+    --chip-size: 42px;
+  }
+
+  .roulette-bar__stake .t-label {
+    display: none;
+  }
+
+  .roulette-bar__led {
+    min-width: 0;
+    font-size: var(--fs-xl);
+  }
+
+  .roulette-bar .segmented {
+    padding: 2px;
+  }
+
+  .roulette-bar .segmented__btn {
+    padding: 2px var(--s2) 4px;
+  }
+
+  .roulette-bar .segmented__name {
+    font-size: var(--fs-sm);
+  }
+
+  .segmented__long {
+    display: none;
+  }
+
+  .segmented__short {
+    display: inline;
+  }
+
+  .roulette-bar__safety {
+    gap: var(--s2);
+  }
+
+  .roulette-bar__safety .toggle__track {
+    width: 40px;
+    height: 24px;
+  }
+
+  .roulette-bar__safety .toggle__thumb {
+    width: 16px;
+    height: 16px;
+  }
+
+  .roulette-bar__safety input:checked + .toggle__track .toggle__thumb {
+    transform: translateX(16px);
+  }
+
+  .roulette-bar__safety .toggle__title {
+    font-size: var(--fs-xs);
+    white-space: nowrap;
+  }
+
+  .presets__summary {
+    font-size: var(--fs-xs);
+    letter-spacing: 0.04em;
+    padding-inline: 0;
+  }
+
+  .roulette-bar__long {
+    display: none;
+  }
+
+  .roulette-bar__presets {
+    justify-self: end;
+  }
+
+  .presets__menu {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+
+  .roulette-bar__go .btn--lg {
+    min-height: 48px;
+    font-size: var(--fs-md);
+  }
+}
+
+/* Telephones bas : l'historique cede sa ligne au tapis. */
+@media (max-width: 900px) and (max-height: 700px) {
+  .roulette {
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'board'
+      'bar';
+  }
+
+  .history {
+    display: none;
+  }
+}

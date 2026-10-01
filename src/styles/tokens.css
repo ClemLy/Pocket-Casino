@@ -1,97 +1,145 @@
 /* ==========================================================================
    Pocket Casino : jetons de design
-   Palette limitee facon console 8 bits. Chaque couleur a un role precis,
-   on n'improvise pas de teinte dans les composants.
+   Direction "pixel premium" : un casino de poche, la nuit, sous une lampe de
+   table. Quatre matieres seulement (feutre, ebene, laiton, ivoire) et une
+   poignee de signaux. Aucune teinte n'est improvisee dans les composants.
    ========================================================================== */
 
 @font-face {
-  font-family: 'Press Start 2P';
-  src: url('../assets/fonts/press-start-2p-latin.woff2') format('woff2');
+  font-family: 'Jersey 10';
+  src: url('../assets/fonts/jersey-10-latin.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'VT323';
-  src: url('../assets/fonts/vt323-latin.woff2') format('woff2');
+  font-family: 'Jersey 25';
+  src: url('../assets/fonts/jersey-25-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jacquard 24';
+  src: url('../assets/fonts/jacquard-24-latin.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 :root {
-  /* Feutrine : vert foret mat, desature pour eviter l'effet verre/bouteille
-     d'un vert trop sature qui penche vers le cyan. */
-  --felt-900: #0a170f;
-  --felt-800: #12271a;
-  --felt-700: #1a3624;
-  --felt-600: #24492f;
-  --felt-500: #305c3c;
-  /* Accent plus vif de la meme famille de teinte, pour le zero de la roulette
-     et les touches qui doivent se detacher du tapis. */
-  --felt-accent: #2f8049;
+  /* La salle : presque noir, une pointe de vert pour rester dans la lumiere
+     de la lampe plutot que dans le gris. */
+  --room-950: #040908;
+  --room-900: #07100e;
 
-  /* Bois du meuble */
-  --wood-900: #2a1509;
-  --wood-700: #4a2712;
-  --wood-500: #6d3b1c;
-  --wood-300: #9a5c2e;
+  /* Feutre : emeraude profonde. Le 400 est la zone eclairee par la lampe. */
+  --felt-950: #051a15;
+  --felt-900: #08241d;
+  --felt-800: #0c3127;
+  --felt-700: #114233;
+  --felt-600: #175641;
+  --felt-500: #1e6c51;
+  --felt-400: #288762;
+  --felt-300: #3aa577;
 
-  /* Laiton et enseignes */
-  --brass-500: #f2c14e;
-  --brass-600: #d4972a;
-  --brass-700: #a06d15;
+  /* Ebene laquee : rails, panneaux, plaques. Chaud, pour trancher sur le vert. */
+  --ebony-950: #0b0806;
+  --ebony-900: #140f0b;
+  --ebony-800: #1d1611;
+  --ebony-700: #2a2018;
+  --ebony-600: #3b2d22;
+  --ebony-500: #54402f;
 
-  /* Rouge tapis / coeur */
-  --crimson-500: #d7263d;
-  --crimson-600: #9e1628;
+  /* Laiton : l'unique couleur d'action principale. */
+  --brass-200: #fff0c2;
+  --brass-300: #ffe08a;
+  --brass-400: #ffcd57;
+  --brass-500: #f4b53b;
+  --brass-600: #d68e1f;
+  --brass-700: #a3620f;
+  --brass-800: #613608;
 
-  /* Encre et papier */
-  --ink-900: #050807;
-  --ink-700: #12100d;
-  --bone-100: #f4ecd8;
-  --bone-300: #cdc0a4;
-  --bone-500: #8d8267;
+  /* Ivoire : cartes, papier, texte principal. */
+  --ivory-50: #fffaf0;
+  --ivory-100: #f5ecd7;
+  --ivory-200: #e8dcc0;
+  --ivory-300: #cfc19f;
+  --ivory-400: #a99c7c;
+  --ivory-500: #7f7660;
 
-  /* Signaux */
-  --led-amber: #ffb627;
-  --led-green: #6bf178;
-  --led-red: #ff5964;
-  --neon-cyan: #5ad2f4;
-  --violet-500: #7b5ea7;
+  /* Velours rouge et noir de table */
+  --rouge-400: #ef4560;
+  --rouge-500: #d22a46;
+  --rouge-600: #a3192f;
+  --rouge-700: #6c0f20;
+  --noir-600: #2a2622;
+  --noir-700: #1b1815;
+  --noir-800: #110f0d;
 
-  /* Typographie */
-  --font-arcade: 'Press Start 2P', 'Courier New', monospace;
-  --font-led: 'VT323', 'Courier New', monospace;
+  /* Signaux de score, facon roguelike de cartes : jetons en bleu, mult en rouge. */
+  --chips-300: #8fd0ff;
+  --chips-500: #3a9eff;
+  --chips-700: #1a5fbf;
+  --mult-300: #ff9aa2;
+  --mult-500: #ff4656;
+  --mult-700: #b51c31;
 
-  /* Rythme : tout est multiple de 4 px pour rester sur la grille pixel. */
-  --u1: 4px;
-  --u2: 8px;
-  --u3: 12px;
-  --u4: 16px;
-  --u5: 20px;
-  --u6: 24px;
-  --u8: 32px;
-  --u10: 40px;
-  --u12: 48px;
+  --win: #5fe08a;
+  --win-deep: #1e8a46;
+  --lose: #ff5c62;
+  --amber: #ffb02e;
+  --violet-400: #b48cff;
+  --violet-600: #6d43d6;
 
-  /* Reliefs : aucune ombre floue, uniquement des decalages nets. */
-  --bevel-light: inset 0 var(--u1) 0 rgba(255, 255, 255, 0.12);
-  --bevel-dark: inset 0 calc(var(--u1) * -1) 0 rgba(0, 0, 0, 0.45);
-  --drop-2: 0 var(--u1) 0 var(--ink-900);
-  --drop-4: 0 var(--u2) 0 var(--ink-900);
-  --drop-6: 0 var(--u3) 0 rgba(0, 0, 0, 0.6);
+  /* Typographie.
+     Jacquard : l'enseigne, reservee au logo et aux grands moments.
+     Jersey 10 : gros pixels, pour les titres, les boutons et les chiffres.
+     Jersey 25 : grille plus fine, pour le texte courant. */
+  --font-sign: 'Jacquard 24', 'Jersey 10', serif;
+  --font-display: 'Jersey 10', 'Arial Narrow', sans-serif;
+  --font-ui: 'Jersey 25', 'Arial Narrow', sans-serif;
 
-  --radius: 0px;
-  --speed-fast: 90ms;
-  --speed: 180ms;
-  --speed-slow: 420ms;
+  /* Jersey a un oeil petit : l'echelle part plus haut qu'une police web. */
+  --fs-xs: 15px;
+  --fs-sm: 18px;
+  --fs-md: 21px;
+  --fs-lg: 26px;
+  --fs-xl: 34px;
+  --fs-2xl: 48px;
+  --fs-3xl: 72px;
+
+  /* Le pixel d'art : contours, levres de boutons, ombres portees. */
+  --px: 3px;
+
+  /* Espacement : multiples de 4. */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s8: 32px;
+  --s10: 40px;
+  --s12: 48px;
+  --s16: 64px;
+
+  /* Contour pixel aux coins entailles : quatre ombres nettes, une par cote.
+     Les coins restent vides, ce qui dessine un arrondi d'un pixel d'art. */
+  --line: var(--ebony-950);
+  --outline:
+    0 calc(var(--px) * -1) 0 0 var(--line), 0 var(--px) 0 0 var(--line),
+    calc(var(--px) * -1) 0 0 0 var(--line), var(--px) 0 0 0 var(--line);
+
+  /* Mouvement */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-press: 110ms;
+  --t-fast: 160ms;
+  --t-base: 220ms;
 
   color-scheme: dark;
-}
-
-/* Grain de feutrine genere en SVG, aucun fichier image a charger. */
-:root {
-  --felt-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)' opacity='0.5'/%3E%3C/svg%3E");
 }
